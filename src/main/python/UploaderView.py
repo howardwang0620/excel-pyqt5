@@ -4,31 +4,41 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-class UploadWidget(QWidget):
-    def __init__(self, parent):
-        super(UploadWidget, self).__init__(parent)
-        self.parent = parent
+class UploadWindow(QMainWindow):
+
+    # signals for button events
+    uploadSignal = pyqtSignal()
+
+    def __init__(self, model):
+        super().__init__()
+        self.title = "App"
+        self.width = 800
+        self.height = 400
+
+        self.model = model
         self.initUI()
 
     def initUI(self):
+
+        window = QWidget()
         container = QHBoxLayout()
 
         fileContainer = QVBoxLayout()
         # self.fileList = QListWidget()
-        self.fileList = DragAndDropListWidget(self)
+        self.fileList = DragAndDropListWidget(self.model)
         fileContainer.addWidget(self.fileList)
 
         self.initFileList()
 
         btnContainer = QVBoxLayout()
         addBtn = QPushButton('Add File')
-        addBtn.clicked.connect(self.promptFileDialog)
+        addBtn.clicked.connect(self.fileList.promptFileDialog)
 
         removeBtn = QPushButton('Remove File')
-        removeBtn.clicked.connect(self.removeWidgetItem)
+        removeBtn.clicked.connect(self.fileList.removeWidgetItem)
 
         submitBtn = QPushButton('Submit')
-        submitBtn.clicked.connect(self.submitAction)
+        submitBtn.clicked.connect(self.uploadFiles)
 
         quitBtn = QPushButton('Quit')
         quitBtn.clicked.connect(self.quitAction)
@@ -38,47 +48,36 @@ class UploadWidget(QWidget):
         btnContainer.addWidget(submitBtn)
         btnContainer.addWidget(quitBtn)
 
-        fileList = QListWidget()
         container.addLayout(fileContainer)
         container.addLayout(btnContainer)
 
-        self.setLayout(container)
+        window.setLayout(container)
 
+        self.resize(self.width, self.height)
+        self.setCentralWidget(window)
+        self.setWindowTitle(self.title)
+        self.show()
+
+    # inits model into itemlistwidget
     def initFileList(self):
-        print("init function todo for back button")
-        # for i, filename in enumerate(self.files):
-        #     self.addWidgetItem(filename)
+        if self.model.getFiles():
+            for file in self.model.getFiles():
+                self.fileList.addWidgetItem(file)
 
-    def promptFileDialog(self):
-        home_dir = str(Path.home())
-        filter = "CSV files (*.csv)|*.csv|Excel Files|*.xls;*.xlsx"
-        filenames = QFileDialog.getOpenFileNames(self, 'Open file', home_dir, filter)[0]
-        for i in range(len(filenames)):
-            self.addWidgetItem(filenames[i])
-
-    def addWidgetItem(self, filename):
-        item = QListWidgetItem(filename)
-        item.setSizeHint(QSize(100, 30))
-        self.fileList.addItem(item)
-
-    def removeWidgetItem(self):
-        selectedItems = self.fileList.selectedItems()
-        if not selectedItems: return
-        for item in selectedItems:
-           self.fileList.takeItem(self.fileList.row(item))
-
-    def submitAction(self):
-        files = [self.fileList.item(i).text() for i in range(self.fileList.count())]
-        self.parent.files = files
-        self.parent.uploaderFilesSubmitted()
-        print("submit")
+    # emit files to signal
+    def uploadFiles(self):
+        self.uploadSignal.emit()
 
     def quitAction(self):
         self.close()
 
+## IMPLEMENT ONLY ALLOW .CSV, .XLS, .XLSX
 class DragAndDropListWidget(QListWidget):
-    def __init__(self, type, parent=None):
+    def __init__(self, model, parent=None):
         super(DragAndDropListWidget, self).__init__(parent)
+
+        # set model for update during add/drop event
+        self.model = model
 
         # accept element drops
         self.setAcceptDrops(True)
@@ -105,13 +104,65 @@ class DragAndDropListWidget(QListWidget):
             event.accept()
             for url in event.mimeData().urls():
                 filename = str(url.toLocalFile())
-                item = QListWidgetItem(filename)
-                item.setSizeHint(QSize(100, 30))
-                self.addItem(item)
+                # For now, will directly communnicate with model (view->model instead of view->controller->model)
+                self.addWidgetItem(filename)
         else:
             event.ignore()
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     ex = App()
-#     sys.exit(app.exec_())
+    # file dialog prompt
+    def promptFileDialog(self):
+        home_dir = str(Path.home())
+        filter = "CSV files (*.csv)|*.csv|Excel Files|*.xls;*.xlsx"
+        filenames = QFileDialog.getOpenFileNames(self, 'Open file', home_dir, filter)[0]
+        for i in range(len(filenames)):
+            self.addWidgetItem(filenames[i])
+
+    # Adds file to widgetlist, then to model thru signal
+    # (?) Bundle adds into a list for only one signal action?
+    def addWidgetItem(self, filename):
+
+        # Checks if file exists in qlistwidget, then sends signal to controller for add to model
+        if filename not in self.toList():
+            print("Adding:", filename, "to model then list")
+            # print(filename, "added!:", self.model.getFiles())
+
+            # emit filename to signal for addition to model
+            # self.addFileSignal.emit(filename)
+            self.model.addFile(filename)
+
+            # add file to QListWidget
+            item = QListWidgetItem(filename)
+            item.setSizeHint(QSize(100, 30))
+            self.addItem(item)
+        else:
+            print(filename, "is already in there")
+
+    # Removes selected files from widgetlist and model
+    # (?) Bundle removes into a list for only one signal action?
+    def removeWidgetItem(self):
+
+        # For now, will directly communnicate with model (view->model instead of view->controller->model)
+        selectedItems = self.selectedItems()
+        if not selectedItems: return
+        for item in selectedItems:
+            if item.text() in self.toList():
+                # print(item.text(), "removed!:", self.model.getFiles())
+
+                # emit filename to signal for removal from model
+                # self.removeFileSignal.emit(item.text())
+                self.model.removeFile(filename)
+
+                # remove file from list
+                self.takeItem(self.row(item))
+            else:
+                print(item.text(), "not in model, cant be removed")
+
+    # returns this listwidget as a list of files
+    def toList(self):
+        return [self.item(i).text() for i in range(self.count())]
+
+
+if __name__ == '__main__':
+    app=QApplication(sys.argv)
+    ex=UploadWindow()
+    sys.exit(app.exec_())

@@ -1,3 +1,43 @@
 after filtering state (ny or nj):
 filter by available cities
 filter by address on existing data
+
+when adding check if exists within filelist first, then add to model using controller
+excelwindow->
+
+ ______________________________________________________________________________
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 ||            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|            |                                                                 |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |

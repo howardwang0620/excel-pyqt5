@@ -3,13 +3,39 @@ from os import listdir
 from os.path import isfile, join
 import pandas as pd
 
-class ExcelDF():
-    def __init__(self, files):
-        self.files = files
+class ExcelModel:
+    def __init__(self):
+        # self.files = ['/Users/howardwang/Desktop/excel-application/excel-files/8.6.2020 nj pm.xls.xlsx', '/Users/howardwang/Desktop/excel-application/excel-files/8.7.2020 nj pm.xls.xlsx']
+        self.files = []
         self.dfList = []
         self.selectedState = ""
         self.selectedCities = []
         self.selectedAddresses= []
+        self.outputList = []
+
+    # setter for files
+    def setFiles(self, files):
+        self.files = files
+
+    # add file o files, returns true if added
+    def addFile(self, file):
+        if file not in self.files:
+            self.files.append(file)
+            return True
+        else:
+            return False
+
+    # remove file from files, returns true if removed
+    def removeFile(self, file):
+        if file in self.files:
+            self.files.remove(file)
+            return True
+        else:
+            return False
+
+    # getter for files
+    def getFiles(self):
+        return self.files
 
     # create data frame from excel files
     def buildDF(self):
@@ -29,22 +55,26 @@ class ExcelDF():
 
     # Adds a city to selectedCities list
     def addCityToFilter(self, city):
-        if city not in self.selectedCities: self.selectedCities.append(city)
+        if city not in self.selectedCities:
+            self.selectedCities.append(city)
 
     # Removes a city from selectedCities list
     def removeCityFromFilter(self, city):
-        if city in self.selectedCities: self.selectedCities.remove(city)
+        if city in self.selectedCities:
+            self.selectedCities.remove(city)
 
     # Adds an address to selectedAddresses list
     def addAddressToFilter(self, address):
         # Need to trim and uppercase because user input
         address = address.strip().upper()
-        if address not in self.selectedAddresses: self.selectedAddresses.append(address)
+        if address not in self.selectedAddresses:
+            self.selectedAddresses.append(address)
 
     # Removes an address from selectedAddresses list
     def removeAddressFromFilter(self, address):
         address = address.strip().upper()
-        if address in self.selectedAddresses: self.selectedAddresses.remove(address)
+        if address in self.selectedAddresses:
+            self.selectedAddresses.remove(address)
 
     # retrieves all cities from dataframe
     def retrieveAllCities(self):
@@ -83,6 +113,14 @@ class ExcelDF():
 
             return self.concatDFs(tmpList)
 
+    # adds selected rows to output list
+    def addToOutputList(self, df):
+        self.outputList.append(df)
+
+    def removeFromOutputList(self, idx):
+        #remove from outputlist of id, should be index
+        print("remove from output list")
+
     # concat dataframes into singular dataframe
     def concatDFs(self, dfList):
         return pd.concat(dfList)
@@ -91,6 +129,7 @@ class ExcelDF():
     # will create a new excel file with all the changes using showCurrentFrame() method
     # will then iterate thru each frame in df, and remove row from excel files
     def saveDF(self):
+        self.concatDFs(self.outputList)
         print("remove each record from previous excel file and save")
         print("save df as new excel file")
 
@@ -98,16 +137,24 @@ class ExcelDF():
 
 def testFiles():
     # path = './test-files'
-    path = './test-files/necessary-files'
+    # path = './test-files/necessary-files'
+    path = './excel-files'
     files = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and (not f.startswith('.') and not f.startswith('~'))]
     return files
 
-files = testFiles()
-excel_df = ExcelDF(files)
-excel_df.buildDF()
-excel_df.filterByState('NY')
-print(excel_df.retrieveAllCities())
 
+# files = testFiles()
+# print("generating frames...")
+# excel_df = ExcelModel()
+# excel_df.setFiles(files)
+# excel_df.buildDF()
+# print("done!")
+#
+# excel_df.filterByState('NY')
+#
+# print(excel_df.retrieveAllCities())
+#
+#
 # print(excel_df.currentFrame())
 # excel_df.addCityToFilter('BROOKLYN')
 # excel_df.addCityToFilter('flushing')

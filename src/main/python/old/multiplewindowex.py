@@ -72,6 +72,10 @@ class Window1(QDialog):
         layoutV.addLayout(layoutH)
         self.setLayout(layoutV)
 
+        self.resize(self.width, self.height)
+        self.setWindowTitle(self.title)
+        self.show()
+
     def goMainWindow(self):
         self.cams = Window()
         self.cams.show()

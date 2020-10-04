@@ -1,11 +1,11 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from MainView import Window
+from Controller import Controller
 
 import sys
 
 class AppContext(ApplicationContext):           # 1. Subclass ApplicationContext
     def run(self):                              # 2. Implement run()
-        self.setup_upload_window()
+        c = Controller()
         return self.app.exec_()                 # 3. End run() with this line
 
     def setup_upload_window(self):
