@@ -37,12 +37,16 @@ class UploadWindow(QMainWindow):
         removeBtn = QPushButton('Remove File')
         removeBtn.clicked.connect(self.fileList.removeWidgetItem)
 
+        self.state = StateWidget()
+        self.state.setFixedHeight(75)
+
         submitBtn = QPushButton('Submit')
         submitBtn.clicked.connect(self.uploadFiles)
 
         quitBtn = QPushButton('Quit')
         quitBtn.clicked.connect(self.quitAction)
 
+        # btnContainer.addWidget(self.state)
         btnContainer.addWidget(addBtn)
         btnContainer.addWidget(removeBtn)
         btnContainer.addWidget(submitBtn)
@@ -161,6 +165,17 @@ class DragAndDropListWidget(QListWidget):
     def toList(self):
         return [self.item(i).text() for i in range(self.count())]
 
+class StateWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        label = QLabel('Select State')
+        self.stateBox = QComboBox()
+        self.stateBox.addItem("NY")
+        self.stateBox.addItem("NJ")
+        layout.addWidget(label)
+        layout.addWidget(self.stateBox)
+        self.setLayout(layout)
 
 if __name__ == '__main__':
     app=QApplication(sys.argv)

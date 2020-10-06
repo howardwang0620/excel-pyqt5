@@ -35,6 +35,8 @@ class Controller(ApplicationContext):
     # @pyqtSlot()
     def filesUploaded(self):
         self.view.close()
+        # self.model.setState(state)
+        # self.model.buildDF()
         self.view = ExcelWindow(self.model)
 
     def run(self):
