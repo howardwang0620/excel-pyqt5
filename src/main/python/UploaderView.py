@@ -41,10 +41,11 @@ class UploadWindow(QMainWindow):
         self.state.setFixedHeight(75)
 
         submitBtn = QPushButton('Submit')
+        # submitBtn.clicked.connect(self.uploadFiles)
         submitBtn.clicked.connect(self.uploadFiles)
 
         quitBtn = QPushButton('Quit')
-        quitBtn.clicked.connect(self.quitAction)
+        quitBtn.clicked.connect(self.close)
 
         # btnContainer.addWidget(self.state)
         btnContainer.addWidget(addBtn)
@@ -68,12 +69,15 @@ class UploadWindow(QMainWindow):
             for file in self.model.getFiles():
                 self.fileList.addWidgetItem(file)
 
-    # emit files to signal
     def uploadFiles(self):
-        self.uploadSignal.emit()
-
-    def quitAction(self):
-        self.close()
+        if self.fileList.toList():
+            self.uploadSignal.emit()
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No files selected!")
+            msg.setStyleSheet("QLabel{min-width: 150px; min-height: 50px;}");
+            msg.exec()
 
 ## IMPLEMENT ONLY ALLOW .CSV, .XLS, .XLSX
 class DragAndDropListWidget(QListWidget):
@@ -116,10 +120,10 @@ class DragAndDropListWidget(QListWidget):
     # file dialog prompt
     def promptFileDialog(self):
         home_dir = str(Path.home())
-        filter = "CSV files (*.csv)|*.csv|Excel Files|*.xls;*.xlsx"
-        filenames = QFileDialog.getOpenFileNames(self, 'Open file', home_dir, filter)[0]
-        for i in range(len(filenames)):
-            self.addWidgetItem(filenames[i])
+        filter = "Excel Files|*.xls;*.xlsx"
+        fileNames, selectedFilter = QFileDialog.getOpenFileNames(self, 'Open file', home_dir, filter)
+        for i in range(len(fileNames)):
+            self.addWidgetItem(fileNames[i])
 
     # Adds file to widgetlist, then to model thru signal
     # (?) Bundle adds into a list for only one signal action?
@@ -127,11 +131,9 @@ class DragAndDropListWidget(QListWidget):
 
         # Checks if file exists in qlistwidget, then sends signal to controller for add to model
         if filename not in self.toList():
-            print("Adding:", filename, "to model then list")
-            # print(filename, "added!:", self.model.getFiles())
+            # print("Adding:", filename, "to model then list")
 
-            # emit filename to signal for addition to model
-            # self.addFileSignal.emit(filename)
+            # add file to model
             self.model.addFile(filename)
 
             # add file to QListWidget

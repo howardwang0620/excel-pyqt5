@@ -6,17 +6,15 @@ class StateWidget(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
+
         label = QLabel('Select State')
         layout.addWidget(label)
 
-        # subLayout = QHBoxLayout()
         self.stateBox = QComboBox()
         self.stateBox.addItem("NY")
         self.stateBox.addItem("NJ")
         self.stateBox.setCurrentIndex(-1)
-        # subLayout.addWidget(self.stateBox)
         layout.addWidget(self.stateBox)
-        # layout.addLayout(subLayout)
 
         self.setLayout(layout)
 
@@ -25,6 +23,7 @@ class CityWidget(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
+
         label = QLabel('Select City')
         layout.addWidget(label)
 
@@ -32,23 +31,49 @@ class CityWidget(QWidget):
         layout.addWidget(self.cityBox)
 
         self.setLayout(layout)
-        # completer = QCompleter(self.cityBox.model())
-        # self.cityBox.setCompleter(completer)
-        # self.cityBox.completer().setCompletionMode(QCompleter.PopupCompletion)
-        # self.cityBox.completer().setCaseSensitivity(Qt.CaseInsensitive)
+        self.disable()
 
     def fillCityBox(self, data):
-        self.cityBox.clear()
+        self.enable()
+        # data = ['SELECT ALL'] + data
         self.cityBox.addItems(data)
-        # self.cityBox.setEditable(True)
-        self.cityBox.setEditable(False)
+
+    def disable(self):
+        self.cityBox.clear()
         self.cityBox.clearInput()
+        self.setEnabled(False)
+
+    def enable(self):
+        self.setEnabled(True)
+        self.cityBox.clear()
+
 
     class CheckedComboBox(QComboBox):
-        def __init__(self):
-            super().__init__()
-            self.setEditable(False)
-            # self.completer().setCompletionMode(QCompleter.PopupCompletion)
+        def __init__(self, parent=None):
+            super(CityWidget.CheckedComboBox, self).__init__(parent)
+            self.setEditable(True)
+            self.setMaxVisibleItems(15)
+            self.setInsertPolicy(QComboBox.NoInsert)
+            self.completer = QCompleter( self )
+
+            # add a filter model to filter matching items
+            self.pFilterModel = QSortFilterProxyModel(self)
+            self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+            self.pFilterModel.setSourceModel(self.model())
+
+            # add a completer, which uses the filter model
+            self.completer = QCompleter(self.pFilterModel, self)
+            # always show all (filtered) completions
+            self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+            # self.completer.setCompletionMode(QCompleter.PopupCompletion)
+
+            self.setCompleter(self.completer)
+            self.lineEdit().textEdited.connect(self.filter)
+
+        # connect signal to text edited
+        def filter(self, text):
+            self.pFilterModel.setFilterFixedString(str(text))
+
 
         def addItem(self, item):
             super().addItem(item)
@@ -63,14 +88,10 @@ class CityWidget(QWidget):
                 self.addItem(item)
 
         def setInput(self, text):
-            self.setEditable(True)
             self.setCurrentText(text)
-            self.setEditable(False)
 
         def clearInput(self):
-            self.setEditable(True)
             self.clearEditText()
-            self.setEditable(False)
 
 
 
@@ -86,7 +107,6 @@ class AddressWidget(QWidget):
         layout.addWidget(self.input)
 
         self.setLayout(layout)
-
         self.disable()
 
     def getText(self):
@@ -102,109 +122,66 @@ class AddressWidget(QWidget):
 
 
 class ExcelTableWidget(QTableWidget):
-    def __init__(self):
+    def __init__(self, button):
         super().__init__()
         self.data = None
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
-        # self.cellChanged.connect(self.onCellCheck)
-        # self.itemSelectionChanged.connect(self.onRowSelect)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.actionButton = button
+        self.actionButton.setEnabled(False)
 
     def updateData(self, df):
-        self.resetData()
+        self.hScrollPos = self.horizontalScrollBar().value()
+        self.clear()
         self.data = df
-        if self.data is not None:
+        # if self.data is not None:
+            # print("DF:", self.data)
+        if self.data is not None and not self.data.empty:
+            self.actionButton.setEnabled(True)
             self.renderData()
+        else:
+            self.actionButton.setEnabled(False)
 
-    def resetData(self):
+    # clear values from table
+    def clear(self):
         self.clearSelection()
-        # self.disconnect()
         self.clearContents()
         self.setRowCount(0)
+
+    # really clears tables
+    def empty(self):
+        self.clear()
         self.setColumnCount(0)
 
     def renderData(self):
         df = self.data
-        # headers = ['Select']
-        # headers.extend(list(df))
         headers = list(df)
-        # print(headers)
-        # print(len(headers))
-        # print(df.shape[1])
+        headers.extend(['id'])
         self.setRowCount(df.shape[0])
-        # self.setColumnCount(df.shape[1] + 1)
-        self.setColumnCount(df.shape[1])
+        self.setColumnCount(df.shape[1] + 1)
         self.setHorizontalHeaderLabels(headers)
 
-        self.blockSignals(True)
         # getting data from df is computationally costly so convert it to array first
-        df_array = df.values
-        for row in range(df.shape[0]):
-            for col in range(df.shape[1]):
-                # if col == 0:
-                #     item = QTableWidgetItem()
-                #     item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-                #     item.setCheckState(Qt.Unchecked)
-                # else:
-                #     item = QTableWidgetItem(str(df_array[row,col-1]))
-
-                item = QTableWidgetItem(str(df_array[row,col]))
+        df_indexes = df.index.values
+        df_values = df.values
+        rows = df.shape[0]
+        cols = df.shape[1] + 1
+        self.blockSignals(True)
+        for row in range(rows):
+            for col in range(cols):
+                if col < cols - 1:
+                    item = QTableWidgetItem(str(df_values[row, col]))
+                else:
+                    item = QTableWidgetItem(str(df_indexes[row]))
                 self.setItem(row, col, item)
         self.blockSignals(False)
         self.resizeColumnsToContents()
-
-    # def onCellCheck(self, row):
-    #     if self.item(row, 0).checkState() == Qt.Checked:
-    #         self.selectRow(row)
-    #         print("cell is checked")
-    #     else:
-    #         print(row)
-    #         # self.selectionModel().select(row, QItemSelectionModel.Deselect)
-    #         print("cell is not checked")
-    #
-    # def onRowSelect(self):
-    #     print("selected row")
-
-class MainActionsWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        layout = QHBoxLayout()
-        self.mainMenuBtn = QPushButton('Menu')
-        # self.mainMenuBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.saveBtn = QPushButton('Save')
-        layout.addWidget(self.mainMenuBtn)
-        layout.addWidget(self.saveBtn)
-        self.setLayout(layout)
+        self.horizontalScrollBar().setValue(self.hScrollPos)
 
 
-# class ExcelTableView(QTableView):
-#     def __init__(self, data=None):
-#         super().__init__()
-#
-#     def updateData(self, data):
-#         self.tableModel = PandasModel(data)
-#         self.setModel(self.tableModel)
-#
-# class PandasModel(QAbstractTableModel):
-#     def __init__(self, data, parent=None):
-#         QAbstractTableModel.__init__(self, parent)
-#         self._data = data
-#
-#     def rowCount(self, parent=None):
-#         return self._data.shape[0]
-#
-#     def columnCount(self, parent=None):
-#         return self._data.shape[1]
-#
-#     def data(self, index, role=Qt.DisplayRole):
-#         if index.isValid():
-#             if role == Qt.DisplayRole:
-#                 return str(self._data.iloc[index.row(), index.column()])
-#         return None
-#
-#     def headerData(self, col, orientation, role):
-#         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-#             return self._data.columns[col]
-#         if orientation == Qt.Vertical and role == Qt.DisplayRole:
-#             return self._data.index[col]
-#         return None
+class StyledPushButton(QPushButton):
+    def __init__(self, parent=None):
+        super(StyledPushButton, self).__init__(parent)
+        self.setMinimumWidth(100)
+        self.setMinimumHeight(50)

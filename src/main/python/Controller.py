@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -9,35 +10,32 @@ from ExcelView import ExcelWindow
 class Controller(ApplicationContext):
     def __init__(self):
         super().__init__()
-
-        self.model = ExcelModel()
-        self.view = UploadWindow(self.model)
         self.initController()
 
     # init controller buttons based on type, eg: upload, save, back
     def initController(self):
         # connect uploadFiles signal
-        self.initView("yes")
+        self.initUploadView()
 
-    def initView(self, type):
+    def initUploadView(self, files=None):
         # self.view.fileList.addFileSignal.connect(self.addFileToModel)
         # self.view.fileList.removeFileSignal.connect(self.removeFileFromModel)
+        self.model = ExcelModel(files)
+        self.view = UploadWindow(self.model)
         self.view.uploadSignal.connect(self.filesUploaded)
 
-    # @pyqtSlot(str)
-    # def addFileToModel(self, file):
-    #     self.model.addFile(file)
-    #
-    # @pyqtSlot(str)
-    # def removeFileFromModel(self, file):
-    #     self.model.removeFile(file)
-    #
     # @pyqtSlot()
     def filesUploaded(self):
         self.view.close()
-        # self.model.setState(state)
-        # self.model.buildDF()
+        self.initExcelView()
+
+    def initExcelView(self):
         self.view = ExcelWindow(self.model)
+        self.view.returnMenuSignal.connect(self.returnToUpload)
+
+    def returnToUpload(self):
+        self.view.close()
+        self.initUploadView(self.model.files)
 
     def run(self):
         self.view.show()
