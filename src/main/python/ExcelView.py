@@ -1,29 +1,24 @@
-import sys
-from datetime import datetime
-from pathlib import Path
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from Widgets.ExcelViewWidgets import *
-from Model import ExcelModel
-
+from pathlib import Path
+from datetime import datetime
 
 class ExcelWindow(QMainWindow):
 
     returnMenuSignal = pyqtSignal()
-    def __init__(self, model=None):
-        super().__init__()
+
+    def __init__(self, model, parent=None):
+        super(QMainWindow, self).__init__(parent)
         self.model = model
-        self.model.buildDF()
-        self.title = "Excel Stuff Here BABY"
+        self.title = "Excel View"
         self.width = 1400
         self.height = 900
-        self.typingTimer = QTimer()
-        self.typingTimer.setSingleShot(True)
-        self.typingTimer.timeout.connect(self.onAddressTextChange)
         self.initUI()
 
     def initUI(self):
+
         container = QWidget()
         mainLayout = QVBoxLayout()
 
@@ -33,18 +28,24 @@ class ExcelWindow(QMainWindow):
         self.state = StateWidget()
         self.state.setSizePolicy(sp)
         self.state.stateBox.currentTextChanged.connect(self.onStateBoxChange)
-
+        # self.state.changeStateSignal.connect(self.checkstate)
         sp.setHorizontalStretch(5);
         self.city = CityWidget()
         self.city.setSizePolicy(sp)
         self.city.cityBox.model().itemChanged.connect(self.onCityBoxCheck)
-        self.city.cityBox.view().pressed.connect(self.onCityBoxSelect)
-        self.city.cityBox.completer.activated.connect(self.onCompleterActivated)
 
         self.address = AddressWidget()
         sp.setHorizontalStretch(6);
         self.address.setSizePolicy(sp)
-        self.address.input.textChanged.connect(self.startTypingTimer)
+
+        # times out typing to allow for less signal emits
+        # self.typingTimer = QTimer()
+        # self.typingTimer.setSingleShot(True)
+        # self.typingTimer.timeout.connect(self.onAddressTextChange)
+        # self.address.input.textChanged.connect(self.startTypingTimer)
+
+        # no timeout, signals emitted whenever input value changes
+        self.address.input.textChanged.connect(self.onAddressTextChange)
 
         inputContainer = QHBoxLayout()
         inputContainer.addWidget(self.state)
@@ -93,12 +94,11 @@ class ExcelWindow(QMainWindow):
 
         mainActionsContainer = QHBoxLayout()
         self.quitBtn = StyledPushButton('Quit')
-        # self.quitBtn.clicked.connect(self.close)
         self.quitBtn.clicked.connect(lambda: self.showWarningDialog(self.close))
         self.mainMenuBtn = StyledPushButton('Menu')
         self.mainMenuBtn.clicked.connect(lambda: self.showWarningDialog(self.returnMenuSignal.emit))
         self.saveBtn = StyledPushButton('Save')
-        self.saveBtn.clicked.connect(self.saveSlot)
+        self.saveBtn.clicked.connect(self.saveCheck)
         mainActionsContainer.addStretch(1)
         mainActionsContainer.addWidget(self.quitBtn)
         mainActionsContainer.addWidget(self.mainMenuBtn)
@@ -118,7 +118,6 @@ class ExcelWindow(QMainWindow):
         self.setCentralWidget(container)
         self.setWindowTitle(self.title)
         self.center()
-        self.show()
 
     def center(self):
         qr = self.frameGeometry()   # geometry of the main window
@@ -130,75 +129,76 @@ class ExcelWindow(QMainWindow):
     ### EVENT ACTIONS ###
 
     # on state combobox select event
+    @pyqtSlot(str)
     def onStateBoxChange(self, state):
         self.model.setState(state)
         cities = self.model.getAllCities()
+        # self.model.setCities(cities)
+        self.city.initCityBox(cities)       # initialize city combobox
+        # PLACE SELECT ALL HERE, MAYBE NOT JUST DEFAULT TO SELECT ALL
 
-        # reset and update cities
-        self.city.fillCityBox(cities)
-
-        # disable address input
-        self.address.disable()
-
-        # empty table
-        self.inputExcelTable.empty()
-
-    # on selection of an item from the completer, select the corresponding item from combobox
-    def onCompleterActivated(self, text):
-        if text:
-            index = self.city.cityBox.findText(str(text))
-            self.onCityBoxSelect(self.city.cityBox.model().index(index, 0))
-
-    # checks city combo box on mouse click
-    def onCityBoxSelect(self, index):
-        item = self.city.cityBox.model().itemFromIndex(index)
-        if item.checkState() == Qt.Checked:
-            item.setCheckState(Qt.Unchecked)
-        else:
-            item.setCheckState(Qt.Checked)
+        self.address.disable()  # disable address input
+        self.inputExcelTable.clear()    # empty table
+        self.inputExcelTable.render(self.model.currentFrame())
 
     # adds city to model filter on combo box check change
+    @pyqtSlot('QStandardItem*')
     def onCityBoxCheck(self, item):
         if item.checkState() == Qt.Checked:
-            self.model.addCityToFilter(item.text())
+            self.model.addCity(item.text())
             self.city.cityBox.setInput(item.text())
         else:
-            self.model.removeCityFromFilter(item.text())
+            self.model.removeCity(item.text())
             self.city.cityBox.clearInput()
 
+        # model has cities to filter, render table and enable address search
         if self.model.selectedCities:
             self.address.enable()
+            self.inputExcelTable.render(self.model.currentFrame())
+
+        # model has no cities to filter, empty table and disable address search
         else:
             self.address.disable()
+            self.inputExcelTable.empty()
 
-        self.inputExcelTable.updateData(self.model.currentFrame())
+    # # helper timer for address input text change
+    # @pyqtSlot(str)
+    # def startTypingTimer(self, text):
+    #     self.typingTimer.start(200)
+    #
+    # # on text change for address
+    # # begins when typing timer times out
+    # def onAddressTextChange(self):
+    #     self.model.setAddress(self.address.getText())
+    #     self.inputExcelTable.render(self.model.currentFrame())
 
-    def onCityBoxSelectAll(self, item):
-        print("select all")
-
-    # helper timer for address input text change
-    def startTypingTimer(self):
-        self.typingTimer.start(250)
-
-    # on text change for address
-    def onAddressTextChange(self):
-        self.model.setAddress(self.address.getText())
-        self.inputExcelTable.updateData(self.model.currentFrame())
+    @pyqtSlot(str)
+    def onAddressTextChange(self, text):
+        self.model.setAddress(text)
+        self.inputExcelTable.render(self.model.currentFrame())
 
     # on add record button click
+    @pyqtSlot()
     def onAddRecordClick(self):
         ix = self.inputExcelTable.selectionModel().selectedRows()
         cols = self.inputExcelTable.columnCount()
         ids = []
+
         for i in ix:
             row = i.row()
             item = self.inputExcelTable.item(row, cols - 1)
+            item_data = item.text().split("_")
             ids.append(item.text())
+
         self.model.addToOutputList(ids)
-        self.inputExcelTable.updateData(self.model.currentFrame())
-        self.outputExcelTable.updateData(self.model.outputFrame())
+        self.inputExcelTable.render(self.model.currentFrame())
+        if self.inputExcelTable.rowCount() == 0:
+            self.inputExcelTable.empty()
+
+        self.outputExcelTable.render(self.model.outputFrame())
 
     # on remove record button click
+    @pyqtSlot()
     def onRemoveRecordClick(self):
         ix = self.outputExcelTable.selectionModel().selectedRows()
         cols = self.outputExcelTable.columnCount()
@@ -206,12 +206,16 @@ class ExcelWindow(QMainWindow):
         for i in ix:
             row = i.row()
             item = self.outputExcelTable.item(row, cols - 1)
+            item_data = item.text().split("_")
             ids.append(item.text())
+
         self.model.removeFromOutputList(ids)
-        self.outputExcelTable.updateData(self.model.outputFrame())
-        self.inputExcelTable.updateData(self.model.currentFrame())
+        self.outputExcelTable.render(self.model.outputFrame())
+        if self.outputExcelTable.rowCount() == 0:
+            self.outputExcelTable.empty()
+        self.inputExcelTable.render(self.model.currentFrame())
 
-
+    @pyqtSlot()
     def showWarningDialog(self, callback):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Question)
@@ -221,24 +225,38 @@ class ExcelWindow(QMainWindow):
         if(ret == QMessageBox.Yes):
             callback()
 
+    def saveCheck(self):
+        if self.outputExcelTable.rowCount() == 0:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No changes detected")
+            msg.exec()
+        else:
+            self.saveSlot()
+
+
     def saveSlot(self):
-        timestamp = "output_" + datetime.today().strftime("%m-%d-%YT%H.%M.%S%z")
-        fileName, selectedFilter = QFileDialog.getSaveFileName(self, 'Save File', timestamp, "Excel Workbook (*.xlsx);;Excel 5.0/95 Workbook (*.xls)")
-        self.model.finish(fileName)
+        timestamp = "{}_output".format(datetime.today().strftime("%m-%d-%YT%H.%M.%S%z"))
+        fileName = self.promptSaveFileDialog(timestamp)
+        if fileName:
+            self.model.finish(fileName)
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Successfully saved {}!".format(fileName))
+            msg.setStyleSheet("QLabel{min-width: 250px; min-height: 150px;}");
+            msg.exec()
+            self.returnMenuSignal.emit()
+
+    def promptSaveFileDialog(self, fileName):
+        fileName, selectedFilter = QFileDialog.getSaveFileName(self, 'Save File', fileName, "Excel Workbook (*.xlsx);;Excel 5.0/95 Workbook (*.xls)")
+        if not fileName:
+            return ''
+
+        name = fileName.rsplit("/", 1)[1].rsplit(".", 1)[0]
+        if len(name) < 32:
+            return fileName
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
-        msg.setText("Successfully saved {}!".format(fileName))
-        msg.setStyleSheet("QLabel{min-width: 250px; min-height: 150px;}");
+        msg.setText("File name too long\n Please set to <=32 characters")
         msg.exec()
-        self.returnMenuSignal.emit()
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    files = ['/Users/howardwang/Desktop/excel-application/excel-files/8.7.2020 nj pm.xls.xlsx', \
-             '/Users/howardwang/Desktop/excel-application/excel-files/8.10.2020 nj am.xls.xlsx']
-    # files = ['/Users/howardwang/Desktop/excel-application/test-files/append-test1.xlsx', \
-    #          '/Users/howardwang/Desktop/excel-application/test-files/append-test2.xlsx']
-    model = ExcelModel(files)
-    ex = ExcelWindow(model)
-    sys.exit(app.exec_())
+        return self.promptSaveFileDialog(name)

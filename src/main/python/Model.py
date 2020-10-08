@@ -73,39 +73,14 @@ class ExcelModel:
         self.selectedState = state
 
     # Adds a city to selectedCities list
-    def addCityToFilter(self, city):
+    def addCity(self, city):
         if city not in self.selectedCities:
             self.selectedCities.append(city)
 
     # Removes a city from selectedCities list
-    def removeCityFromFilter(self, city):
+    def removeCity(self, city):
         if city in self.selectedCities:
             self.selectedCities.remove(city)
-
-    def setAddress(self, address):
-        address = address.strip()
-        self.selectedAddress = address
-
-    # (DEPRECATED)
-    # only allowed to pass in NY or NJ as state
-    # def filterByState(self, state):
-    #     self.selectedState = state
-    #     for idx, df in enumerate(self.dfList):
-    #         self.dfList[idx] = df[df['State'] == state]
-
-    # (DEPRECATED) SELECTEDADDRESSES(LIST) IS NOW A SELECTEDADDRESS(STR)
-    # # Adds an address to selectedAddresses list
-    # def addAddressToFilter(self, address):
-    #     # Need to trim and uppercase because user input
-    #     address = address.strip().upper()
-    #     if address not in self.selectedAddresses:
-    #         self.selectedAddresses.append(address)
-    #
-    # # Removes an address from selectedAddresses list
-    # def removeAddressFromFilter(self, address):
-    #     address = address.strip().upper()
-    #     if address in self.selectedAddresses:
-    #         self.selectedAddresses.remove(address)
 
     # retrieves all cities from dataframe
     def getAllCities(self):
@@ -113,8 +88,16 @@ class ExcelModel:
         for df in self.dfList:
             df = df[df['State'] == self.selectedState]
             citySet.update(df.City.unique())
-
         return sorted(list(citySet))
+
+    # Sets cities list
+    def setCities(self, cities):
+        self.selectedCities = cities
+
+    # sets address for filter
+    def setAddress(self, address):
+        address = address.strip()
+        self.selectedAddress = address
 
     # creates the current frame with all filters applied accordingly
     def currentFrame(self):
@@ -136,28 +119,34 @@ class ExcelModel:
                     tmpList.append(df[(df['State'] == self.selectedState) & \
                                    (df['City'].isin(self.selectedCities))])
 
-            return self.concatDFs(tmpList)
+            df = self.concatDFs(tmpList)
+            if not df.empty:
+                return df
 
-        # no state and city selected
+        # no state and city selected or empty dataframe
+        return None
+
+    # returns current frame for output DF
+    def outputFrame(self):
+        df = self.concatDFs(self.outDFList)
+        if not df.empty:
+            return df
         else:
-            # print("no frame possible -> no state or no city")
             return None
 
     # adds selected ids to output list
     def addToOutputList(self, ids):
-        ids.sort(reverse=True)
         for id in ids:
             # print("ADD:", id)
             fileIndex = int(id.split("_")[0])
             inDF = self.dfList[fileIndex]
             row = inDF.loc[[id]]
             inDF.drop(id, inplace=True)
-            outDF = pd.concat([self.outDFList[fileIndex], row]).sort_values(by=['file_num', 'row_num'])
+            outDF = self.concatDFs([self.outDFList[fileIndex], row])
             self.outDFList[fileIndex] = outDF
 
     # removes selected ids from output list
     def removeFromOutputList(self, ids):
-        ids.sort(reverse=True)
         for id in ids:
             # print("REMOVE:", id)
             fileIndex = int(id.split("_")[0])
@@ -167,17 +156,12 @@ class ExcelModel:
             inDF = self.concatDFs([self.dfList[fileIndex], row])
             self.dfList[fileIndex] = inDF
 
-    def outputFrame(self):
-        return self.concatDFs(self.outDFList)
-
     # concat dataframes into singular dataframe
-    def concatDFs(self, dfList):
-        return pd.concat(dfList).sort_values(by=['file_num', 'row_num'])
+    def concatDFs(self, list):
+        return pd.concat(list).sort_values(by=['file_num', 'row_num'])
 
     # occurs on user submit of changes to save data frame
-    # will create a new excel file with all the changes using showCurrentFrame() method
-    # will then iterate thru each frame in df, and remove row from excel files
-    # should figure out handling for concatenating empty DF Lists
+    # writes all changes to new excel file and old input files as well
     def finish(self, outputFile):
         self.concatDFs(self.outDFList)
         for i in range(len(self.files)):

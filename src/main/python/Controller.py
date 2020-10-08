@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -18,30 +17,31 @@ class Controller(ApplicationContext):
         self.initUploadView()
 
     def initUploadView(self, files=None):
-        # self.view.fileList.addFileSignal.connect(self.addFileToModel)
-        # self.view.fileList.removeFileSignal.connect(self.removeFileFromModel)
         self.model = ExcelModel(files)
         self.view = UploadWindow(self.model)
         self.view.uploadSignal.connect(self.filesUploaded)
-
-    # @pyqtSlot()
-    def filesUploaded(self):
-        self.view.close()
-        self.initExcelView()
+        self.view.show()
 
     def initExcelView(self):
         self.view = ExcelWindow(self.model)
         self.view.returnMenuSignal.connect(self.returnToUpload)
+        self.view.show()
 
+    # @pyqtSlot()
+    def filesUploaded(self):
+        self.view.close()
+        self.model.buildDF()
+        self.initExcelView()
+
+    # @pyqtSlot()
     def returnToUpload(self):
         self.view.close()
         self.initUploadView(self.model.files)
 
     def run(self):
-        self.view.show()
         return self.app.exec_()
 
 if __name__ == '__main__':
-    c = Controller()                      # 4. Instantiate the subclass
-    exit_code = c.run()                   # 5. Invoke run()
+    c = Controller()
+    exit_code = c.run()
     sys.exit(exit_code)

@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 class StateWidget(QWidget):
+
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
@@ -33,10 +34,11 @@ class CityWidget(QWidget):
         self.setLayout(layout)
         self.disable()
 
-    def fillCityBox(self, data):
+    def initCityBox(self, data):
         self.enable()
         # data = ['SELECT ALL'] + data
         self.cityBox.addItems(data)
+        self.cityBox.clearInput()
 
     def disable(self):
         self.cityBox.clear()
@@ -54,7 +56,7 @@ class CityWidget(QWidget):
             self.setEditable(True)
             self.setMaxVisibleItems(15)
             self.setInsertPolicy(QComboBox.NoInsert)
-            self.completer = QCompleter( self )
+
 
             # add a filter model to filter matching items
             self.pFilterModel = QSortFilterProxyModel(self)
@@ -65,15 +67,34 @@ class CityWidget(QWidget):
             self.completer = QCompleter(self.pFilterModel, self)
             # always show all (filtered) completions
             self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
-            # self.completer.setCompletionMode(QCompleter.PopupCompletion)
-
             self.setCompleter(self.completer)
+
+            # connect signals
             self.lineEdit().textEdited.connect(self.filter)
+            self.completer.activated.connect(self.onCompleterActivated)
+            self.view().pressed.connect(self.onCityBoxSelect)
+
+        # on selection of an item from the completer, select the corresponding item from combobox
+        @pyqtSlot('QString')
+        def onCompleterActivated(self, text):
+            if text:
+                index = self.findText(str(text))
+                self.onCityBoxSelect(self.model().index(index, 0))
+                # super(CityWidget.CheckedComboBox, self).showPopup()
 
         # connect signal to text edited
+        @pyqtSlot('QString')
         def filter(self, text):
             self.pFilterModel.setFilterFixedString(str(text))
 
+        # checks city combo box on mouse click
+        @pyqtSlot('QModelIndex')
+        def onCityBoxSelect(self, index):
+            item = self.model().itemFromIndex(index)
+            if item.checkState() == Qt.Checked:
+                item.setCheckState(Qt.Unchecked)
+            else:
+                item.setCheckState(Qt.Checked)
 
         def addItem(self, item):
             super().addItem(item)
@@ -94,7 +115,6 @@ class CityWidget(QWidget):
             self.clearEditText()
 
 
-
 class AddressWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -108,6 +128,7 @@ class AddressWidget(QWidget):
 
         self.setLayout(layout)
         self.disable()
+
 
     def getText(self):
         return self.input.text()
@@ -125,41 +146,48 @@ class ExcelTableWidget(QTableWidget):
     def __init__(self, button):
         super().__init__()
         self.data = None
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.actionButton = button
         self.actionButton.setEnabled(False)
 
-    def updateData(self, df):
-        self.hScrollPos = self.horizontalScrollBar().value()
-        self.clear()
-        self.data = df
-        # if self.data is not None:
-            # print("DF:", self.data)
-        if self.data is not None and not self.data.empty:
+        # self.setSortingEnabled(True)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.itemSelectionChanged.connect(self.toggleButton)
+
+    # toggle connected action button on/off depending if items are selected
+    @pyqtSlot()
+    def toggleButton(self):
+        if(len(self.selectedItems()) > 0):
             self.actionButton.setEnabled(True)
-            self.renderData()
         else:
             self.actionButton.setEnabled(False)
 
-    # clear values from table
+    # render table elements
+    def render(self, data):
+        self.hScrollPos = self.horizontalScrollBar().value()
+        self.clear()
+        if data is not None :
+            self.buildTable(data)
+
+    # empty only values from table
     def clear(self):
         self.clearSelection()
         self.clearContents()
         self.setRowCount(0)
 
-    # really clears tables
+    # empty header and values from table
     def empty(self):
         self.clear()
         self.setColumnCount(0)
 
-    def renderData(self):
-        df = self.data
-        headers = list(df)
-        headers.extend(['id'])
+    # add dataframe elements into table
+    def buildTable(self, data):
+        df = data
         self.setRowCount(df.shape[0])
         self.setColumnCount(df.shape[1] + 1)
+        headers = list(data)
+        headers.extend(['id'])
         self.setHorizontalHeaderLabels(headers)
 
         # getting data from df is computationally costly so convert it to array first
@@ -179,7 +207,7 @@ class ExcelTableWidget(QTableWidget):
         self.resizeColumnsToContents()
         self.horizontalScrollBar().setValue(self.hScrollPos)
 
-
+# 100x50 fixed size QPushButton
 class StyledPushButton(QPushButton):
     def __init__(self, parent=None):
         super(StyledPushButton, self).__init__(parent)

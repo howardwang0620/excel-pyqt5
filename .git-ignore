@@ -1,7 +1,10 @@
-/excel-files
-/target
-/test-files
+backups/
+excel-files/
+target/
 **/.DS_Store
+src/build
+src/main/icons
+todo
 
 # GitHub default .gitignore for Python projects
 # PyInstaller
