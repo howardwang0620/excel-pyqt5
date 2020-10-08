@@ -1,10 +1,10 @@
 backups/
 excel-files/
-target/
-**/.DS_Store
 src/build
 src/main/icons
+target/
 todo
+**/.DS_Store
 
 # GitHub default .gitignore for Python projects
 # PyInstaller
