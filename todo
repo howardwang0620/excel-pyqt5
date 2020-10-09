@@ -1,8 +1,9 @@
-add button on disable when nothing selected
-add button enabled when something is selected
-
 select-all option for combobox
+
+
 
 open output file after write:
 import os
 os.system("start EXCEL.EXE file.xlsx")
+
+backup original files

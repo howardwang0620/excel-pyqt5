@@ -1,7 +1,8 @@
-import os
-from os import listdir
-from os.path import isfile, join
+from sys import platform
+from os import listdir, makedirs, path, system
 import pandas as pd
+import copy
+
 
 class ExcelModel:
     def __init__(self, files=None):
@@ -11,7 +12,8 @@ class ExcelModel:
             self.files = []
 
         self.dfList = []
-        self.outDFList = [];
+        self.outDFList = []
+        self.backups = []
 
         self.selectedState = None
         self.selectedCities = []
@@ -68,6 +70,9 @@ class ExcelModel:
             self.dfList.append(df)
             self.outDFList.append(pd.DataFrame())
 
+        # back up original files
+        self.backups = copy.deepcopy(self.dfList)
+
     # set selectedState to inputted state
     def setState(self, state):
         self.selectedState = state
@@ -109,15 +114,15 @@ class ExcelModel:
                 # if both City and Address columns have applied filters
                 if self.selectedAddress:
                     # print("all selected")
-                    tmpList.append(df[(df['State'] == self.selectedState) & \
-                                      (df['City'].isin(self.selectedCities)) & \
+                    tmpList.append(df[(df['State'] == self.selectedState) &
+                                      (df['City'].isin(self.selectedCities)) &
                                       (df['Address1'].str.contains(self.selectedAddress, case=False))])
 
                 # if only City column has applied filter
                 elif self.selectedCities:
                     # print("only cities selected")
-                    tmpList.append(df[(df['State'] == self.selectedState) & \
-                                   (df['City'].isin(self.selectedCities))])
+                    tmpList.append(df[(df['State'] == self.selectedState) &
+                                      (df['City'].isin(self.selectedCities))])
 
             df = self.concatDFs(tmpList)
             if not df.empty:
@@ -162,31 +167,67 @@ class ExcelModel:
 
     # occurs on user submit of changes to save data frame
     # writes all changes to new excel file and old input files as well
-    def finish(self, outputFile):
-        self.concatDFs(self.outDFList)
-        for i in range(len(self.files)):
-            file = self.files[i]
-            inDF = self.reformatDF(self.dfList[i])
-            self.saveDF(file, inDF)
+    def finish(self, outputFile, timestamp):
+        try:
+            # build backup directory in outputfile location if not there
+            backupPath = self.createBackupDirectory(outputFile)
 
-        outDF = self.reformatDF(self.concatDFs(self.outDFList))
-        self.saveDF(outputFile, outDF)
+            for i in range(len(self.files)):
+                file = self.files[i]
+                inDF = self.reformatDF(self.dfList[i])
+                self.saveDF(file, inDF)
 
-    # CANNOT USE '/' IN FILE NAME
+                # backup old files
+                self.saveBackup(backupPath, file, timestamp, self.backups[i])
+
+            self.concatDFs(self.outDFList)
+            outDF = self.reformatDF(self.concatDFs(self.outDFList))
+            self.saveDF(outputFile, outDF)
+
+        except Exception as ex:
+            print("exception raised")
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            return {"status_code": False, "message": message}
+        else:
+            return {"status_code": True, "message": outputFile}
+
+    # create backup directory to place files in
+    # will reside in same directory as output file
+    def createBackupDirectory(self, outputFile):
+        backupPath = path.join(path.dirname(
+            path.abspath(outputFile)), 'backups')
+        if not path.exists(backupPath):
+            makedirs(backupPath)
+
+        return backupPath
+
+    def saveBackup(self, backupPath, copyFile, timestamp, df):
+        # create file name for backup
+        fileSplit = path.basename(copyFile).rsplit(".", 1)
+        name = "{}-backup".format(fileSplit[0])[:26]
+        fileSplit[0] = name
+        backupFileName = ".".join(fileSplit)
+        backupFile = path.join(backupPath, backupFileName)
+
+        # Reformat + append timestamp and save
+        backupDF = self.reformatDF(df)
+        df.loc[df.index[0], 'timestamp'] = timestamp
+
+        self.saveDF(backupFile, backupDF)
+
     def saveDF(self, file, df):
-        writer = pd.ExcelWriter(file, engine='xlsxwriter', datetime_format='mm/dd/YYYY')
-        sheet_name = file.rsplit("/", 1)[1]
+
+        # create excel writer and write df to excel file
+        writer = pd.ExcelWriter(file, engine='xlsxwriter',
+                                datetime_format='mm/dd/YYYY')
+        sheet_name = path.basename(file)
         df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-        #auto adjust excel columns
-        worksheet = writer.sheets[sheet_name]
-        for idx, col in enumerate(df):
-            series = df[col]
-            max_len = max((
-                series.astype(str).map(len).max(),  # len of largest item
-                len(str(series.name))  # len of column name/header
-            )) + 1  # adding a little extra space
-            worksheet.set_column(idx, idx, max_len)  # set column width
+        # auto adjust excel columns
+        wb = writer.book
+        ws = writer.sheets[sheet_name]
+        self.reformatExcel(wb, ws, df)
 
         writer.save()
 
@@ -197,17 +238,36 @@ class ExcelModel:
         df['Sales Date'] = pd.to_datetime(df['Sales Date'])
         return df
 
+    def reformatExcel(self, wb, ws, df):
+        for idx, col in enumerate(df):
+            series = df[col]
+            max_len = max((
+                series.astype(str).map(len).max(),  # len of largest item
+                len(str(series.name))  # len of column name/header
+            )) + 1  # adding a little extra space
+            ws.set_column(idx, idx, max_len)  # set column width
+        # wb.window_width = 16095
+        # workbook.window_height = 9660
+        wb.set_size(16095, 9660)
 
 
 def testFiles():
     # path = './test-files'
     # path = './test-files/necessary-files'
-    path = './excel-files'
-    files = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and (not f.startswith('.') and not f.startswith('~'))]
+    p = path.abspath('./excel-files')
+    files = [path.join(p, f) for f in listdir(p) if path.isfile(path.join(p, f)) and (
+        not f.startswith('.') and not f.startswith('~'))]
     return files
 
 
 # files = testFiles()
+# em = ExcelModel(files)
+# em.buildDF()
+# em.reformatDF(em.backups[0])
+#
+# print(em.backups[0])
+# em.finish(
+#     '/Users/howardwang/Desktop/excel-application/excel-files/dsca.xls')
 # print("generating frames...")
 # excel_df = ExcelModel(files)
 # excel_df.buildDF()

@@ -2,15 +2,17 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from Widgets.ExcelViewWidgets import *
-from pathlib import Path
 from datetime import datetime
+from os import path, system
+from sys import platform
+
 
 class ExcelWindow(QMainWindow):
 
     returnMenuSignal = pyqtSignal()
 
-    def __init__(self, model, parent=None):
-        super(QMainWindow, self).__init__(parent)
+    def __init__(self, model):
+        super().__init__()
         self.model = model
         self.title = "Excel View"
         self.width = 1400
@@ -24,18 +26,18 @@ class ExcelWindow(QMainWindow):
 
         sp = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
-        sp.setHorizontalStretch(3);
+        sp.setHorizontalStretch(3)
         self.state = StateWidget()
         self.state.setSizePolicy(sp)
         self.state.stateBox.currentTextChanged.connect(self.onStateBoxChange)
         # self.state.changeStateSignal.connect(self.checkstate)
-        sp.setHorizontalStretch(5);
+        sp.setHorizontalStretch(5)
         self.city = CityWidget()
         self.city.setSizePolicy(sp)
         self.city.cityBox.model().itemChanged.connect(self.onCityBoxCheck)
 
         self.address = AddressWidget()
-        sp.setHorizontalStretch(6);
+        sp.setHorizontalStretch(6)
         self.address.setSizePolicy(sp)
 
         # times out typing to allow for less signal emits
@@ -57,25 +59,33 @@ class ExcelWindow(QMainWindow):
         inputFrame.setFrameStyle(QFrame.Panel)
         inputFrame.setLayout(inputContainer)
 
-
         excelContainer = QHBoxLayout()
 
         inputExcelContainer = QVBoxLayout()
         inputExcelLabel = QLabel("Input Excel Rows")
         inputExcelLabel.setAlignment(Qt.AlignCenter)
-        inputExcelLabel.setStyleSheet("font-weight: bold;");
+        inputExcelLabel.setStyleSheet("font-weight: bold;")
+
+        inputExcelContainerButtons = QHBoxLayout()
+        self.selectAllRecordBtn = QPushButton('Select All')
+        self.selectAllRecordBtn.setMinimumHeight(40)
         self.addRecordBtn = QPushButton('Add')
-        self.inputExcelTable = ExcelTableWidget(self.addRecordBtn)
         self.addRecordBtn.setMinimumHeight(40)
         self.addRecordBtn.clicked.connect(self.onAddRecordClick)
+        self.inputExcelTable = ExcelTableWidget(
+            self.addRecordBtn, self.selectAllRecordBtn)
+
+        inputExcelContainerButtons.addWidget(self.selectAllRecordBtn)
+        inputExcelContainerButtons.addWidget(self.addRecordBtn)
         inputExcelContainer.addWidget(inputExcelLabel)
         inputExcelContainer.addWidget(self.inputExcelTable)
-        inputExcelContainer.addWidget(self.addRecordBtn)
+        inputExcelContainer.addLayout(inputExcelContainerButtons)
+        # inputExcelContainer.addWidget(self.addRecordBtn)
 
         outputExcelContainer = QVBoxLayout()
         outputExcelLabel = QLabel("Output Excel Rows")
         outputExcelLabel.setAlignment(Qt.AlignCenter)
-        outputExcelLabel.setStyleSheet("font-weight: bold;");
+        outputExcelLabel.setStyleSheet("font-weight: bold;")
         self.removeRecordBtn = QPushButton('Remove')
         self.outputExcelTable = ExcelTableWidget(self.removeRecordBtn)
         self.removeRecordBtn.setMinimumHeight(40)
@@ -91,12 +101,13 @@ class ExcelWindow(QMainWindow):
         excelFrame.setLayout(excelContainer)
         excelFrame.setFrameStyle(QFrame.Panel)
 
-
         mainActionsContainer = QHBoxLayout()
         self.quitBtn = StyledPushButton('Quit')
-        self.quitBtn.clicked.connect(lambda: self.showWarningDialog(self.close))
+        self.quitBtn.clicked.connect(
+            lambda: self.showWarningDialog(self.close))
         self.mainMenuBtn = StyledPushButton('Menu')
-        self.mainMenuBtn.clicked.connect(lambda: self.showWarningDialog(self.returnMenuSignal.emit))
+        self.mainMenuBtn.clicked.connect(
+            lambda: self.showWarningDialog(self.returnMenuSignal.emit))
         self.saveBtn = StyledPushButton('Save')
         self.saveBtn.clicked.connect(self.saveCheck)
         mainActionsContainer.addStretch(1)
@@ -122,13 +133,14 @@ class ExcelWindow(QMainWindow):
     def center(self):
         qr = self.frameGeometry()   # geometry of the main window
         cp = QDesktopWidget().availableGeometry().center()      # center point of screen
-        qr.moveCenter(cp)           # move rectangle's center point to screen's center point
-        self.move(qr.topLeft())     # top left of rectangle becomes top left of window centering it
-
+        # move rectangle's center point to screen's center point
+        qr.moveCenter(cp)
+        # top left of rectangle becomes top left of window centering it
+        self.move(qr.topLeft())
 
     ### EVENT ACTIONS ###
-
     # on state combobox select event
+
     @pyqtSlot(str)
     def onStateBoxChange(self, state):
         self.model.setState(state)
@@ -193,11 +205,13 @@ class ExcelWindow(QMainWindow):
         self.model.addToOutputList(ids)
         self.inputExcelTable.render(self.model.currentFrame())
         if self.inputExcelTable.rowCount() == 0:
+            self.selectAllRecordBtn.setEnabled(False)
             self.inputExcelTable.empty()
+        else:
+            self.selectAllRecordBtn.setEnabled(True)
 
         self.outputExcelTable.render(self.model.outputFrame())
 
-    # on remove record button click
     @pyqtSlot()
     def onRemoveRecordClick(self):
         ix = self.outputExcelTable.selectionModel().selectedRows()
@@ -234,25 +248,42 @@ class ExcelWindow(QMainWindow):
         else:
             self.saveSlot()
 
-
     def saveSlot(self):
-        timestamp = "{}_output".format(datetime.today().strftime("%m-%d-%YT%H.%M.%S%z"))
+        timestamp = "{}_output".format(
+            datetime.today().strftime("%m-%d-%YT%H.%M.%S%z"))
         fileName = self.promptSaveFileDialog(timestamp)
         if fileName:
-            self.model.finish(fileName)
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Successfully saved {}!".format(fileName))
-            msg.setStyleSheet("QLabel{min-width: 250px; min-height: 150px;}");
-            msg.exec()
-            self.returnMenuSignal.emit()
+            saveData = self.model.finish(fileName, timestamp)
+            if saveData['status_code']:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setText("Successfully saved {}!".format(fileName))
+                msg.setStyleSheet(
+                    "QLabel{min-width: 250px; min-height: 150px;}")
+                msg.exec()
+
+                # OPEN OUTPUT FILE HERE
+                if platform == 'darwin':
+                    system(
+                        "open -a 'Microsoft Excel.app' '{}'".format(saveData['message']))
+                elif platform == 'win32':
+                    system("start 'excel.exe' '{}'".format(
+                        saveData['message']))
+
+                self.returnMenuSignal.emit()
+            else:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText(saveData['message'])
+                msg.exec()
 
     def promptSaveFileDialog(self, fileName):
-        fileName, selectedFilter = QFileDialog.getSaveFileName(self, 'Save File', fileName, "Excel Workbook (*.xlsx);;Excel 5.0/95 Workbook (*.xls)")
+        fileName, selectedFilter = QFileDialog.getSaveFileName(
+            self, 'Save File', fileName, "Excel Workbook (*.xlsx);;Excel 5.0/95 Workbook (*.xls)")
         if not fileName:
             return ''
 
-        name = fileName.rsplit("/", 1)[1].rsplit(".", 1)[0]
+        name = path.basename(fileName)
         if len(name) < 32:
             return fileName
         msg = QMessageBox()

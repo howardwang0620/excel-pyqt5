@@ -1,17 +1,17 @@
+import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from Widgets.UploaderViewWidgets import *
-from pathlib import Path
+
 
 class UploadWindow(QMainWindow):
-
     # signal for upload events
     uploadSignal = pyqtSignal()
 
-    def __init__(self, model, parent=None):
-        super(UploadWindow, self).__init__(parent)
-        self.title = "Upload"
+    def __init__(self, model):
+        super().__init__()
+        self.title = "Upload Window"
         self.width = 800
         self.height = 400
 
@@ -24,6 +24,8 @@ class UploadWindow(QMainWindow):
 
         fileContainer = QVBoxLayout()
         self.fileList = DragAndDropListWidget(self.model)
+        self.fileList.addFileSignal.connect(self.addFile)
+        self.fileList.removeFileSignal.connect(self.removeFile)
         fileContainer.addWidget(self.fileList)
 
         self.initFileList()
@@ -62,6 +64,12 @@ class UploadWindow(QMainWindow):
             for file in self.model.getFiles():
                 self.fileList.addWidgetItem(file)
 
+    def addFile(self, filename):
+        self.model.addFile(filename)
+
+    def removeFile(self, filename):
+        self.model.removeFile(filename)
+
     def uploadFiles(self):
         if self.fileList.toList():
             self.uploadSignal.emit()
@@ -69,12 +77,11 @@ class UploadWindow(QMainWindow):
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)
             msg.setText("No files selected!")
-            msg.setStyleSheet("QLabel{min-width: 150px; min-height: 50px;}");
+            msg.setStyleSheet("QLabel{min-width: 150px; min-height: 50px;}")
             msg.exec()
 
 
-
 if __name__ == '__main__':
-    app=QApplication(sys.argv)
-    ex=UploadWindow()
+    app = QApplication(sys.argv)
+    ex = UploadWindow()
     sys.exit(app.exec_())

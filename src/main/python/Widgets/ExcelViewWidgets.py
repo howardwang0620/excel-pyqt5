@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
+
 class StateWidget(QWidget):
 
     def __init__(self):
@@ -49,14 +50,12 @@ class CityWidget(QWidget):
         self.setEnabled(True)
         self.cityBox.clear()
 
-
     class CheckedComboBox(QComboBox):
         def __init__(self, parent=None):
             super(CityWidget.CheckedComboBox, self).__init__(parent)
             self.setEditable(True)
             self.setMaxVisibleItems(15)
             self.setInsertPolicy(QComboBox.NoInsert)
-
 
             # add a filter model to filter matching items
             self.pFilterModel = QSortFilterProxyModel(self)
@@ -66,7 +65,8 @@ class CityWidget(QWidget):
             # add a completer, which uses the filter model
             self.completer = QCompleter(self.pFilterModel, self)
             # always show all (filtered) completions
-            self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+            self.completer.setCompletionMode(
+                QCompleter.UnfilteredPopupCompletion)
             self.setCompleter(self.completer)
 
             # connect signals
@@ -98,7 +98,7 @@ class CityWidget(QWidget):
 
         def addItem(self, item):
             super().addItem(item)
-            item = self.model().item(self.count()-1,0)
+            item = self.model().item(self.count() - 1, 0)
             item.model().blockSignals(True)
             item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
             item.setCheckState(Qt.Unchecked)
@@ -129,7 +129,6 @@ class AddressWidget(QWidget):
         self.setLayout(layout)
         self.disable()
 
-
     def getText(self):
         return self.input.text()
 
@@ -143,13 +142,15 @@ class AddressWidget(QWidget):
 
 
 class ExcelTableWidget(QTableWidget):
-    def __init__(self, button):
+    def __init__(self, actionButton, selectAllBtn=None):
         super().__init__()
         self.data = None
-        self.actionButton = button
+        self.actionButton = actionButton
         self.actionButton.setEnabled(False)
-
-        # self.setSortingEnabled(True)
+        self.selectAllBtn = selectAllBtn
+        if self.selectAllBtn is not None:
+            self.selectAllBtn.setEnabled(False)
+            self.selectAllBtn.clicked.connect(self.toggleSelectAll)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -158,16 +159,14 @@ class ExcelTableWidget(QTableWidget):
     # toggle connected action button on/off depending if items are selected
     @pyqtSlot()
     def toggleButton(self):
-        if(len(self.selectedItems()) > 0):
-            self.actionButton.setEnabled(True)
-        else:
-            self.actionButton.setEnabled(False)
+        self.actionButton.setEnabled(len(self.selectedItems()) > 0)
 
     # render table elements
+
     def render(self, data):
         self.hScrollPos = self.horizontalScrollBar().value()
         self.clear()
-        if data is not None :
+        if data is not None:
             self.buildTable(data)
 
     # empty only values from table
@@ -206,6 +205,16 @@ class ExcelTableWidget(QTableWidget):
         self.blockSignals(False)
         self.resizeColumnsToContents()
         self.horizontalScrollBar().setValue(self.hScrollPos)
+        if self.selectAllBtn is not None:
+            self.selectAllBtn.setEnabled(self.rowCount() > 0)
+
+    @pyqtSlot()
+    def toggleSelectAll(self):
+        if len(self.selectionModel().selectedRows()) < self.rowCount():
+            self.selectAll()
+        else:
+            self.clearSelection()
+
 
 # 100x50 fixed size QPushButton
 class StyledPushButton(QPushButton):

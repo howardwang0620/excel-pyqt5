@@ -6,6 +6,7 @@ from Model import ExcelModel
 from UploaderView import UploadWindow
 from ExcelView import ExcelWindow
 
+
 class Controller(ApplicationContext):
     def __init__(self):
         super().__init__()
@@ -40,6 +41,7 @@ class Controller(ApplicationContext):
 
     def run(self):
         return self.app.exec_()
+
 
 if __name__ == '__main__':
     c = Controller()

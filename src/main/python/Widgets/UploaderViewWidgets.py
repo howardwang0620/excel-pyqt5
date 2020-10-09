@@ -3,8 +3,14 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-## IMPLEMENT ONLY ALLOW .CSV, .XLS, .XLSX
+# IMPLEMENT ONLY ALLOW .CSV, .XLS, .XLSX
+
+
 class DragAndDropListWidget(QListWidget):
+
+    addFileSignal = pyqtSignal(str)
+    removeFileSignal = pyqtSignal(str)
+
     def __init__(self, model, parent=None):
         super(DragAndDropListWidget, self).__init__(parent)
 
@@ -36,7 +42,7 @@ class DragAndDropListWidget(QListWidget):
             event.accept()
             for url in event.mimeData().urls():
                 filename = str(url.toLocalFile())
-                if filename.endswith(( '.xls', '.xlsx' )):
+                if filename.endswith(('.xls', '.xlsx')):
                     self.addWidgetItem(filename)
                 else:
                     event.ignore()
@@ -47,7 +53,8 @@ class DragAndDropListWidget(QListWidget):
     def promptFileDialog(self):
         home_dir = str(Path.home())
         filter = "Excel Files|*.xls;*.xlsx"
-        fileNames, selectedFilter = QFileDialog.getOpenFileNames(self, 'Open file', home_dir, filter)
+        fileNames, selectedFilter = QFileDialog.getOpenFileNames(
+            self, 'Open file', home_dir, filter)
         for i in range(len(fileNames)):
             self.addWidgetItem(fileNames[i])
 
@@ -59,7 +66,8 @@ class DragAndDropListWidget(QListWidget):
             # print("Adding:", filename, "to model then list")
 
             # add file to model
-            self.model.addFile(filename)
+            # self.model.addFile(filename)
+            self.addFileSignal.emit(filename)
 
             # add file to QListWidget
             item = QListWidgetItem(filename)
@@ -73,14 +81,16 @@ class DragAndDropListWidget(QListWidget):
 
         # For now, will directly communnicate with model (view->model instead of view->controller->model)
         selectedItems = self.selectedItems()
-        if not selectedItems: return
+        if not selectedItems:
+            return
         for item in selectedItems:
             if item.text() in self.toList():
                 # print(item.text(), "removed!:", self.model.getFiles())
 
                 # emit filename to signal for removal from model
                 # self.removeFileSignal.emit(item.text())
-                self.model.removeFile(filename)
+                # self.model.removeFile(filename)
+                self.removeFileSignal.emit(item.text())
 
                 # remove file from list
                 self.takeItem(self.row(item))
