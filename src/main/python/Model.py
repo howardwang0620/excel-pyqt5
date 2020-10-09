@@ -11,8 +11,8 @@ class ExcelModel:
             self.files = []
 
         self.dfList = []
-        self.outDFList = []
         self.backups = []
+        self.outDFList = []
 
         self.selectedState = None
         self.selectedCities = []
@@ -42,6 +42,8 @@ class ExcelModel:
     # Never rebuildDF in same instance
     def buildDF(self):
         self.dfList.clear()
+        self.backups.clear()
+        self.outDFList.clear()
         self.selectedState = None
         self.selectedCities.clear()
         self.selectedAddress = None
