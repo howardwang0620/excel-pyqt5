@@ -1,4 +1,3 @@
-import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -79,9 +78,3 @@ class UploadWindow(QMainWindow):
             msg.setText("No files selected!")
             msg.setStyleSheet("QLabel{min-width: 150px; min-height: 50px;}")
             msg.exec()
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = UploadWindow()
-    sys.exit(app.exec_())

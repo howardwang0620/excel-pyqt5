@@ -1,10 +1,10 @@
+from sys import platform
+from os import path, system
+from datetime import datetime
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from Widgets.ExcelViewWidgets import *
-from datetime import datetime
-from os import path, system
-from sys import platform
 
 
 class ExcelWindow(QMainWindow):

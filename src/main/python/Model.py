@@ -1,5 +1,4 @@
-from sys import platform
-from os import listdir, makedirs, path, system
+from os import listdir, makedirs, path
 import pandas as pd
 import copy
 
@@ -42,21 +41,17 @@ class ExcelModel:
     # create data frame from excel files
     # Never rebuildDF in same instance
     def buildDF(self):
-
         self.dfList.clear()
         self.selectedState = None
         self.selectedCities.clear()
         self.selectedAddress = None
+
         # build df by filtering by state
         for idx, f in enumerate(self.files):
-            # df = pd.read_excel(f).assign(id=idx)
             df = pd.read_excel(f)
 
             df['file_num'] = idx
             df['row_num'] = df.index
-
-            # assign id -> (file_num)_(row_num)
-            # df['id'] = str(idx) + "_" + df.index.astype(str)
             df['id'] = str(idx) + "_" + df.index.astype(str)
             df.set_index(['id'], inplace=True)
 
@@ -113,14 +108,12 @@ class ExcelModel:
             for df in self.dfList:
                 # if both City and Address columns have applied filters
                 if self.selectedAddress:
-                    # print("all selected")
                     tmpList.append(df[(df['State'] == self.selectedState) &
                                       (df['City'].isin(self.selectedCities)) &
                                       (df['Address1'].str.contains(self.selectedAddress, case=False))])
 
                 # if only City column has applied filter
                 elif self.selectedCities:
-                    # print("only cities selected")
                     tmpList.append(df[(df['State'] == self.selectedState) &
                                       (df['City'].isin(self.selectedCities))])
 
@@ -142,7 +135,6 @@ class ExcelModel:
     # adds selected ids to output list
     def addToOutputList(self, ids):
         for id in ids:
-            # print("ADD:", id)
             fileIndex = int(id.split("_")[0])
             inDF = self.dfList[fileIndex]
             row = inDF.loc[[id]]
@@ -153,7 +145,6 @@ class ExcelModel:
     # removes selected ids from output list
     def removeFromOutputList(self, ids):
         for id in ids:
-            # print("REMOVE:", id)
             fileIndex = int(id.split("_")[0])
             outDF = self.outDFList[fileIndex]
             row = outDF.loc[[id]]
@@ -246,8 +237,6 @@ class ExcelModel:
                 len(str(series.name))  # len of column name/header
             )) + 1  # adding a little extra space
             ws.set_column(idx, idx, max_len)  # set column width
-        # wb.window_width = 16095
-        # workbook.window_height = 9660
         wb.set_size(16095, 9660)
 
 
