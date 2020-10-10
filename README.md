@@ -13,16 +13,26 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
 
 1. Clone this repo onto your machine using:
     - `git clone https://github.com/howardwang0620/excel-pyqt5.git`
+
+
 2. CD into directory with:
     - `cd excel-pyqt5`
+
+
 3. Create a virtualenv running Python3.6:
     - `virtualenv -p {path\to\python3.6\executable} myenv`
     - {path\to\python3.6\executable} designates the location where python3.6 was installed (**don't include the brackets**):
         - eg:  `C:\Users\{user}\AppData\Local\Programs\Python\Python36\python.exe`
+
+
 4. Activate virtualenv by running (**must do this everytime you want to interact with app through command line**):
     - `myenv\scripts\activate.bat`
+
+
 5. Install pip dependencies:
     - `pip install -r requirements.txt`
+
+
 6. Run the application using:
     - `fbs run`
 
