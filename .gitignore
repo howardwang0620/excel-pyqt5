@@ -1,7 +1,5 @@
 backups/
 excel-files/
-src/build
-src/main/icons
 target/
 todo
 **/.DS_Store
