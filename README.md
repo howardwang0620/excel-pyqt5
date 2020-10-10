@@ -20,9 +20,9 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
 
 
 ## Setup
-1. Run python3.6 in a virtualenv by running:
-    - `virtualenv -p {path\to\python\executable} myenv`
-    - {path\to\python\executable} designates the location where python3.6 was installed (**don't include the brackets**):
+1. Create a virtualenv running Python3.6:
+    - `virtualenv -p {path\to\python3.6\executable} myenv`
+    - {path\to\python3.6\executable} designates the location where python3.6 was installed (**don't include the brackets**):
         - eg:  `C:\Users\{user}\AppData\Local\Programs\Python\Python36\python.exe`
 
 
@@ -30,7 +30,7 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
     - `myenv\scripts\activate.bat`
 
 
-3. Run to install dependencies:
+3. Install dependencies:
     - `pip install -r requirements.txt`
 
 
