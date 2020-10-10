@@ -265,9 +265,9 @@ class ExcelWindow(QMainWindow):
                 # OPEN OUTPUT FILE HERE
                 if platform == 'darwin':
                     system(
-                        "open -a 'Microsoft Excel.app' '{}'".format(saveData['message']))
+                        'open -a "Microsoft Excel.app" "{}"'.format(saveData['message']))
                 elif platform == 'win32':
-                    system("start 'excel.exe' '{}'".format(
+                    system('start "EXCEL.EXE" "{}"'.format(
                         saveData['message']))
 
                 self.returnMenuSignal.emit()

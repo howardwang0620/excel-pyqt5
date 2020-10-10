@@ -2,6 +2,8 @@ PyQt5-sip
 PyQt5
 pandas==0.25.1
 numpy==1.19.2
+xlrd
+xlsxwriter
 logger
 fbs
 PyInstaller==3.4
