@@ -27,7 +27,7 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
     - `fbs run`
 
 ## Create Application
-**:warning: Must have virtualenv activated (Setup -> Step 2)**
+**:warning: Must have virtualenv activated (Setup -> Step 4)**
 
 * #### Freeze into Desktop Application
     1. run `fbs freeze`
