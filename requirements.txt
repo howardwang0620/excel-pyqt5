@@ -1,0 +1,6 @@
+PyQt5
+pandas
+copy
+logger
+fbs
+PyInstaller==3.4
