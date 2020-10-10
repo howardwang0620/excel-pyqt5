@@ -45,7 +45,7 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
                 - If you don't have it, download it [here](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/)
             2. Add to PATH environment variable:
                 * `This PC->Properties->Advanced System Settings`
-                * Under System Variables, select Path and edit. Add a new path by selecting New, then paste in location of 64-bit DLL (the directory above)
+                * Under System Variables, **select Path and Edit**. Add a new path by **selecting New**, then paste in location of 64-bit DLL (the directory above) and **apply changes**
             3. Restart your computer
 
 
@@ -53,6 +53,6 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
     1. Run and install NSIS ([download here](https://sourceforge.net/projects/nsis/files/NSIS%203/3.06.1/nsis-3.06.1-setup.exe/download?use_mirror=iweb&download=))
     2. Add NSIS directory to PATH environment variable:
         * `This PC->Properties->Advanced System Settings`
-        * Under System Variables, select Path and edit. Add a new path by selecting New, then paste in location of NSIS
+        * Under System Variables, **select Path and Edit**. Add a new path by **selecting New**, then paste in location of NSIS and **apply changes**
     3. Restart your computer
     3. Run `fbs installer`
