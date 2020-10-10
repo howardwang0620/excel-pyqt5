@@ -7,3 +7,4 @@ xlsxwriter
 logger
 fbs
 PyInstaller==3.4
+pywin32
