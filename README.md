@@ -2,17 +2,17 @@
 PyQt5 UI for modifying Excel Files (Upwork Project)
 
 ## Installation:
-1. Clone this repo to your directory using Git (install [git here](https://git-scm.com/downloads)):
+1. Clone this repo to your directory using Git (install [git here](https://git-scm.com/downloads))
 
 
-2. CD into directory by using:
+2. CD into directory by with:
     - `cd excel-pyqt5`
 
 
-3. [Install Python3.6](https://www.python.org/downloads/release/python-360/) if not installed (**Must use Python 3.6**):
+3. [Install Python3.6](https://www.python.org/downloads/release/python-360/) if not installed (**Must use Python 3.6**)
 
 
-4. [Install pip](https://pip.pypa.io/en/stable/installing/) if not installed:
+4. [Install pip](https://pip.pypa.io/en/stable/installing/) if not installed
 
 
 5. Install virtualenv if not already installed by running:
