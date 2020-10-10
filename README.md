@@ -2,39 +2,40 @@
 PyQt5 UI for modifying Excel Files (Upwork Project)
 
 ## Installation:
-1. Clone this repo to your directory using Git (install [git here](https://git-scm.com/downloads))
+1. Clone this repo to your directory using [Git](https://git-scm.com/downloads)
+    - `git clone https://github.com/howardwang0620/excel-pyqt5.git`
 
 
-2. CD into directory by with:
-    - `cd excel-pyqt5`
+2. Install [Python3.6](https://www.python.org/downloads/release/python-360/) if not installed (**Must use Python 3.6**)
 
 
-3. [Install Python3.6](https://www.python.org/downloads/release/python-360/) if not installed (**Must use Python 3.6**)
+3. [Install pip](https://pip.pypa.io/en/stable/installing/) if not installed
 
 
-4. [Install pip](https://pip.pypa.io/en/stable/installing/) if not installed
-
-
-5. Install virtualenv if not already installed by running:
+4. Install virtualenv if not already installed by running:
     - `pip install virtualenv`
 
 
 ## Setup
-1. Create a virtualenv running Python3.6:
+1. CD into directory with:
+    - `cd excel-pyqt5`
+
+
+2. Create a virtualenv running Python3.6:
     - `virtualenv -p {path\to\python3.6\executable} myenv`
     - {path\to\python3.6\executable} designates the location where python3.6 was installed (**don't include the brackets**):
         - eg:  `C:\Users\{user}\AppData\Local\Programs\Python\Python36\python.exe`
 
 
-2. Activate virtualenv by running (**must do this everytime you want to interact with app through command line**):
+3. Activate virtualenv by running (**must do this everytime you want to interact with app through command line**):
     - `myenv\scripts\activate.bat`
 
 
-3. Install dependencies:
+4. Install dependencies:
     - `pip install -r requirements.txt`
 
 
-4. Run the application using:
+5. Run the application using:
     - `fbs run`
 
 ## Create Application
