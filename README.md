@@ -38,6 +38,8 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
     - `fbs run`
 
 ## Create Application
+**:warning: Must have virtualenv activated (Setup -> Step 2) for these steps**
+
 * #### Freeze into Desktop Application
     1. run `fbs freeze`
         * If error occurs with FileNotFound - missing api-ms-win-crt-*:
