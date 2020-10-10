@@ -31,7 +31,7 @@ PyQt5 UI for modifying Excel Files (Upwork Project)
 
 * #### Freeze into Desktop Application
     1. run `fbs freeze`
-        * If error occurs with FileNotFound - missing api-ms-win-crt-*:
+        * If FileNotFound error occurs with - missing api-ms-win-crt-*:
             1. Check if the directory exists by going to:`C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x64`
                 - If you don't have it, download it [here](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/)
             2. Add directory to PATH environment variable:
