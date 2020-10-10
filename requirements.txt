@@ -1,6 +1,7 @@
+PyQt5-sip
 PyQt5
-pandas
-copy
+pandas==0.25.1
+numpy==1.19.2
 logger
 fbs
 PyInstaller==3.4
