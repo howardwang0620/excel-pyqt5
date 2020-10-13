@@ -80,7 +80,6 @@ class ExcelWindow(QMainWindow):
         inputExcelContainer.addWidget(inputExcelLabel)
         inputExcelContainer.addWidget(self.inputExcelTable)
         inputExcelContainer.addLayout(inputExcelContainerButtons)
-        # inputExcelContainer.addWidget(self.addRecordBtn)
 
         outputExcelContainer = QVBoxLayout()
         outputExcelLabel = QLabel("Output Excel Rows")
@@ -117,7 +116,6 @@ class ExcelWindow(QMainWindow):
 
         mainActionsFrame = QFrame()
         mainActionsFrame.setLayout(mainActionsContainer)
-        # mainActionsFrame.setFrameStyle(QFrame.Panel)
 
         mainLayout.addWidget(inputFrame)
         mainLayout.addWidget(excelFrame)
@@ -133,14 +131,12 @@ class ExcelWindow(QMainWindow):
     def center(self):
         qr = self.frameGeometry()   # geometry of the main window
         cp = QDesktopWidget().availableGeometry().center()      # center point of screen
-        # move rectangle's center point to screen's center point
-        qr.moveCenter(cp)
-        # top left of rectangle becomes top left of window centering it
-        self.move(qr.topLeft())
+        qr.moveCenter(cp)   # move rectangle's center to screen's center point
+        self.move(qr.topLeft())  # move rect top left to window top left
 
     ### EVENT ACTIONS ###
-    # on state combobox select event
 
+    # on state combobox select event
     @pyqtSlot(str)
     def onStateBoxChange(self, state):
         self.model.setState(state)
@@ -241,10 +237,7 @@ class ExcelWindow(QMainWindow):
 
     def saveCheck(self):
         if self.outputExcelTable.rowCount() == 0:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("No changes detected")
-            msg.exec()
+            CustomQMessageBox('Warning', "No changes detected")
         else:
             self.saveSlot()
 
@@ -255,12 +248,8 @@ class ExcelWindow(QMainWindow):
         if fileName:
             saveData = self.model.finish(fileName, timestamp)
             if saveData['status_code']:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setText("Successfully saved {}!".format(fileName))
-                msg.setStyleSheet(
-                    "QLabel{min-width: 250px; min-height: 150px;}")
-                msg.exec()
+                CustomQMessageBox(
+                    'Information', "Successfully saved {}!".format(fileName))
 
                 # OPEN OUTPUT FILE HERE
                 if platform == 'darwin':
@@ -272,10 +261,7 @@ class ExcelWindow(QMainWindow):
 
                 self.returnMenuSignal.emit()
             else:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText(saveData['message'])
-                msg.exec()
+                CustomQMessageBox('Critical', saveData['message'])
 
     def promptSaveFileDialog(self, fileName):
         fileName, selectedFilter = QFileDialog.getSaveFileName(
@@ -286,8 +272,7 @@ class ExcelWindow(QMainWindow):
         name = path.basename(fileName)
         if len(name) < 32:
             return fileName
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-        msg.setText("File name too long\n Please set to <=32 characters")
-        msg.exec()
+
+        CustomQMessageBox(
+            'Information', "File name too long\n Please set to <=31 characters")
         return self.promptSaveFileDialog(name)
