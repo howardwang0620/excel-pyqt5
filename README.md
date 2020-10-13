@@ -1,5 +1,5 @@
 # excel-pyqt5
-PyQt5 UI for modifying Excel Files (Upwork Project)
+PyQt5 Application for modifying Excel Files (Upwork Project)
 
 ## Requirements:
 1. Make sure you have [Git](https://git-scm.com/downloads) installed
