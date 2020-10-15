@@ -115,6 +115,32 @@ class CityWidget(QWidget):
             self.clearEditText()
 
 
+class InvoiceWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+
+        label = QLabel('Invoice No.')
+        layout.addWidget(label)
+
+        self.input = QLineEdit()
+        layout.addWidget(self.input)
+
+        self.setLayout(layout)
+        self.disable()
+
+    def getText(self):
+        return self.input.text()
+
+    def disable(self):
+        self.input.clear()
+        self.input.setEnabled(False)
+
+    def enable(self):
+        self.input.clear()
+        self.input.setEnabled(True)
+
+
 class AddressWidget(QWidget):
     def __init__(self):
         super().__init__()

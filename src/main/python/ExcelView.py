@@ -26,32 +26,38 @@ class ExcelWindow(QMainWindow):
 
         sp = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
-        sp.setHorizontalStretch(3)
+        sp.setHorizontalStretch(2)
         self.state = StateWidget()
         self.state.setSizePolicy(sp)
         self.state.stateBox.currentTextChanged.connect(self.onStateBoxChange)
-        # self.state.changeStateSignal.connect(self.checkstate)
-        sp.setHorizontalStretch(5)
+        sp.setHorizontalStretch(4)
         self.city = CityWidget()
         self.city.setSizePolicy(sp)
         self.city.cityBox.model().itemChanged.connect(self.onCityBoxCheck)
+
+        self.invoice = InvoiceWidget()
+        sp.setHorizontalStretch(4)
+        self.invoice.setSizePolicy(sp)
+        # no timeout, signal emitted whenever input value changes
+        self.invoice.input.textChanged.connect(self.onInvoiceTextChange)
 
         self.address = AddressWidget()
         sp.setHorizontalStretch(6)
         self.address.setSizePolicy(sp)
 
-        # times out typing to allow for less signal emits
+        # below code times out user input so signal emitted x mseconds after typing
         # self.typingTimer = QTimer()
         # self.typingTimer.setSingleShot(True)
         # self.typingTimer.timeout.connect(self.onAddressTextChange)
         # self.address.input.textChanged.connect(self.startTypingTimer)
 
-        # no timeout, signals emitted whenever input value changes
+        # no timeout, signal emitted whenever input value changes
         self.address.input.textChanged.connect(self.onAddressTextChange)
 
         inputContainer = QHBoxLayout()
         inputContainer.addWidget(self.state)
         inputContainer.addWidget(self.city)
+        inputContainer.addWidget(self.invoice)
         inputContainer.addWidget(self.address)
 
         # place layout in qframe for borders
@@ -135,16 +141,14 @@ class ExcelWindow(QMainWindow):
         self.move(qr.topLeft())  # move rect top left to window top left
 
     ### EVENT ACTIONS ###
-
     # on state combobox select event
     @pyqtSlot(str)
     def onStateBoxChange(self, state):
         self.model.setState(state)
         cities = self.model.getAllCities()
-        # self.model.setCities(cities)
-        self.city.initCityBox(cities)       # initialize city combobox
-        # PLACE SELECT ALL HERE, MAYBE NOT JUST DEFAULT TO SELECT ALL
+        self.city.initCityBox(cities)   # initialize city combobox
 
+        self.invoice.disable()  # disable invoice input
         self.address.disable()  # disable address input
         self.inputExcelTable.clear()    # empty table
         self.inputExcelTable.render(self.model.currentFrame())
@@ -159,17 +163,19 @@ class ExcelWindow(QMainWindow):
             self.model.removeCity(item.text())
             self.city.cityBox.clearInput()
 
-        # model has cities to filter, render table and enable address search
+        # model has cities to filter, render table and enable invoice + address search
         if self.model.selectedCities:
+            self.invoice.enable()
             self.address.enable()
             self.inputExcelTable.render(self.model.currentFrame())
 
-        # model has no cities to filter, empty table and disable address search
+        # model has no cities to filter, empty table and disable invoice + address search
         else:
+            self.invoice.disable()
             self.address.disable()
             self.inputExcelTable.empty()
 
-    # # helper timer for address input text change
+    # # helper timer for input text change
     # @pyqtSlot(str)
     # def startTypingTimer(self, text):
     #     self.typingTimer.start(200)
@@ -179,6 +185,11 @@ class ExcelWindow(QMainWindow):
     # def onAddressTextChange(self):
     #     self.model.setAddress(self.address.getText())
     #     self.inputExcelTable.render(self.model.currentFrame())
+
+    @pyqtSlot(str)
+    def onInvoiceTextChange(self, text):
+        self.model.setInvoice(text)
+        self.inputExcelTable.render(self.model.currentFrame())
 
     @pyqtSlot(str)
     def onAddressTextChange(self, text):

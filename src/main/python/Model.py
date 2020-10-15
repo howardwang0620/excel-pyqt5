@@ -1,4 +1,5 @@
-from os import listdir, makedirs, path
+from os import makedirs, path
+import xlsxwriter
 import pandas as pd
 import copy
 
@@ -14,9 +15,10 @@ class ExcelModel:
         self.backups = []
         self.outDFList = []
 
-        self.selectedState = None
+        self.selectedState = ""
         self.selectedCities = []
-        self.selectedAddress = None
+        self.selectedInvoice = ""
+        self.selectedAddress = ""
 
     # add file to self.files, returns true if added
     def addFile(self, file):
@@ -44,9 +46,10 @@ class ExcelModel:
         self.dfList.clear()
         self.backups.clear()
         self.outDFList.clear()
-        self.selectedState = None
+        self.selectedState = ""
         self.selectedCities.clear()
-        self.selectedAddress = None
+        self.selectedInvoice = ""
+        self.selectedAddress = ""
 
         # build df by filtering by state
         for idx, f in enumerate(self.files):
@@ -96,6 +99,10 @@ class ExcelModel:
     def setCities(self, cities):
         self.selectedCities = cities
 
+    def setInvoice(self, invoice):
+        invoice = invoice.strip()
+        self.selectedInvoice = invoice
+
     # sets address for filter
     def setAddress(self, address):
         address = address.strip()
@@ -108,16 +115,10 @@ class ExcelModel:
         if self.selectedState and self.selectedCities:
             tmpList = []
             for df in self.dfList:
-                # if both City and Address columns have applied filters
-                if self.selectedAddress:
-                    tmpList.append(df[(df['State'] == self.selectedState) &
-                                      (df['City'].isin(self.selectedCities)) &
-                                      (df['Address1'].str.contains(self.selectedAddress, case=False))])
-
-                # if only City column has applied filter
-                elif self.selectedCities:
-                    tmpList.append(df[(df['State'] == self.selectedState) &
-                                      (df['City'].isin(self.selectedCities))])
+                tmpList.append(df[(df['State'] == self.selectedState) &
+                                  (df['City'].isin(self.selectedCities)) &
+                                  (df['Invoice NO'].str.contains(self.selectedInvoice, case=False)) &
+                                  (df['Address1'].str.contains(self.selectedAddress, case=False))])
 
             df = self.concatDFs(tmpList)
             if not df.empty:
@@ -167,21 +168,31 @@ class ExcelModel:
 
             for i in range(len(self.files)):
                 file = self.files[i]
-                inDF = self.reformatDF(self.dfList[i])
-                self.saveDF(file, inDF)
+                self.saveDF(file, self.dfList[i])
 
                 # backup old files
                 self.saveBackup(backupPath, file, timestamp, self.backups[i])
 
-            self.concatDFs(self.outDFList)
-            outDF = self.reformatDF(self.concatDFs(self.outDFList))
-            self.saveDF(outputFile, outDF)
+            # save output df
+            self.saveDF(outputFile, self.concatDFs(self.outDFList))
 
-        except Exception as ex:
+        except xlsxwriter.exceptions.FileCreateError:
+            message = "Error saving Excel File: {}, it could possibly be open in \
+                        another process".format(file)
+            return {"status_code": False, "message": message}
+
+        except KeyError as e:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(e).__name__, e.args)
+            # message = "Current data for this instance has changed, please restart the application"
+            return {"status_code": False, "message": message}
+
+        except Exception as e:
             print("exception raised")
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
+            message = template.format(type(e).__name__, e.args)
             return {"status_code": False, "message": message}
+
         else:
             return {"status_code": True, "message": outputFile}
 
@@ -204,12 +215,15 @@ class ExcelModel:
         backupFile = path.join(backupPath, backupFileName)
 
         # Reformat + append timestamp and save
-        backupDF = self.reformatDF(df)
-        df.loc[df.index[0], 'timestamp'] = timestamp
+        if 'timestamp' not in df.columns:
+            df.loc[df.index[0], 'timestamp'] = timestamp
 
-        self.saveDF(backupFile, backupDF)
+        # save
+        self.saveDF(backupFile, df)
 
     def saveDF(self, file, df):
+        # reformat df
+        df = self.reformatDF(df)
 
         # create excel writer and write df to excel file
         writer = pd.ExcelWriter(file, engine='xlsxwriter',
@@ -225,11 +239,13 @@ class ExcelModel:
         writer.save()
 
     def reformatDF(self, df):
-        df.reset_index(drop=True, inplace=True)
-        df.drop(columns=['file_num', 'row_num'], inplace=True)
-        df['Require Date'] = pd.to_datetime(df['Require Date'])
-        df['Sales Date'] = pd.to_datetime(df['Sales Date'])
-        return df
+        tmp = df.drop(columns=['file_num', 'row_num'], inplace=False)
+        tmp.reset_index(drop=True, inplace=True)
+
+        tmp['Require Date'] = pd.to_datetime(tmp['Require Date'])
+        tmp['Sales Date'] = pd.to_datetime(tmp['Sales Date'])
+
+        return tmp
 
     def reformatExcel(self, wb, ws, df):
         for idx, col in enumerate(df):
@@ -242,15 +258,14 @@ class ExcelModel:
         wb.set_size(16095, 9660)
 
 
-def testFiles():
-    # path = './test-files'
-    # path = './test-files/necessary-files'
-    p = path.abspath('./excel-files')
-    files = [path.join(p, f) for f in listdir(p) if path.isfile(path.join(p, f)) and (
-        not f.startswith('.') and not f.startswith('~'))]
-    return files
-
-
+# def testFiles():
+#     # path = './test-files'
+#     # path = './test-files/necessary-files'
+#     p = path.abspath('./excel-files')
+#     files = [path.join(p, f) for f in listdir(p) if path.isfile(path.join(p, f)) and (
+#         not f.startswith('.') and not f.startswith('~'))]
+#     return files
+#
 # files = testFiles()
 # em = ExcelModel(files)
 # em.buildDF()
