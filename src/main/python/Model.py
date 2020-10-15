@@ -2,6 +2,7 @@ from os import makedirs, path
 import xlsxwriter
 import pandas as pd
 import copy
+import gc
 
 
 class ExcelModel:
@@ -40,38 +41,67 @@ class ExcelModel:
     def getFiles(self):
         return self.files
 
-    # create data frame from excel files
-    # Never rebuildDF in same instance
-    def buildDF(self):
-        self.dfList.clear()
-        self.backups.clear()
-        self.outDFList.clear()
+    def resetModel(self):
+        # release dataframes from memory
+        del self.dfList
+        del self.backups
+        del self.outDFList
+        gc.collect()
+
+        # re-init values
+        self.dfList = []
+        self.backups = []
+        self.outDFList = []
         self.selectedState = ""
         self.selectedCities.clear()
         self.selectedInvoice = ""
         self.selectedAddress = ""
 
-        # build df by filtering by state
-        for idx, f in enumerate(self.files):
-            df = pd.read_excel(f)
+    # create data frame from excel files
+    # Never rebuildDF in same instance
+    def buildDF(self):
 
-            df['file_num'] = idx
-            df['row_num'] = df.index
-            df['id'] = str(idx) + "_" + df.index.astype(str)
-            df.set_index(['id'], inplace=True)
+        # release data frames from memory if any were created
+        self.resetModel()
 
-            # reformatting
-            df['Require Date'] = df['Require Date'].dt.strftime('%m/%d/%Y')
-            df['Sales Date'] = df['Sales Date'].dt.strftime('%m/%d/%Y')
-            df['State'] = df['State'].str.strip().str.upper()
-            df['City'] = df['City'].str.strip().str.upper()
-            df['Address1'] = df['Address1'].str.strip().str.upper()
+        try:
+            # build df by filtering by state
+            for idx, f in enumerate(self.files):
+                df = pd.read_excel(f)
 
-            self.dfList.append(df)
-            self.outDFList.append(pd.DataFrame())
+                df['file_num'] = idx
+                df['row_num'] = df.index
+                df['id'] = str(idx) + "_" + df.index.astype(str)
+                df.set_index(['id'], inplace=True)
 
-        # back up original files
-        self.backups = copy.deepcopy(self.dfList)
+                # reformatting
+                df['Require Date'] = df['Require Date'].dt.strftime('%m/%d/%Y')
+                df['Sales Date'] = df['Sales Date'].dt.strftime('%m/%d/%Y')
+                df['State'] = df['State'].str.strip().str.upper()
+                df['City'] = df['City'].str.strip().str.upper()
+                df['Address1'] = df['Address1'].str.strip().str.upper()
+
+                self.dfList.append(df)
+                self.outDFList.append(pd.DataFrame())
+
+            # back up original files
+            self.backups = copy.deepcopy(self.dfList)
+
+        except AttributeError:
+            message = "There seems to be an error with input files, "\
+                + "please make sure data types and columns are added "\
+                + "accordingly (dates as date values, etc.)"
+
+            return {"status_code": False, "message": message}
+
+        except Exception as e:
+            message = "An exception of type {0} occurred. Arguments:\n{1!r}".format(
+                type(e).__name__, e.args)
+
+            return {"status_code": False, "message": message}
+
+        else:
+            return {"status_code": True, "message": "Success!"}
 
     # set selectedState to inputted state
     def setState(self, state):
@@ -194,6 +224,7 @@ class ExcelModel:
             return {"status_code": False, "message": message}
 
         else:
+            self.resetModel()
             return {"status_code": True, "message": outputFile}
 
     # create backup directory to place files in

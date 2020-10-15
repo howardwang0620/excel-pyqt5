@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from Widgets.ExcelViewWidgets import *
+from Widgets.Widgets import *
 
 
 class ExcelWindow(QMainWindow):
@@ -44,15 +45,14 @@ class ExcelWindow(QMainWindow):
         self.address = AddressWidget()
         sp.setHorizontalStretch(6)
         self.address.setSizePolicy(sp)
+        # no timeout, signal emitted whenever input value changes
+        self.address.input.textChanged.connect(self.onAddressTextChange)
 
         # below code times out user input so signal emitted x mseconds after typing
         # self.typingTimer = QTimer()
         # self.typingTimer.setSingleShot(True)
         # self.typingTimer.timeout.connect(self.onAddressTextChange)
         # self.address.input.textChanged.connect(self.startTypingTimer)
-
-        # no timeout, signal emitted whenever input value changes
-        self.address.input.textChanged.connect(self.onAddressTextChange)
 
         inputContainer = QHBoxLayout()
         inputContainer.addWidget(self.state)
@@ -257,22 +257,22 @@ class ExcelWindow(QMainWindow):
             datetime.today().strftime("%m-%d-%YT%H.%M.%S%z"))
         fileName = self.promptSaveFileDialog(timestamp)
         if fileName:
-            saveData = self.model.finish(fileName, timestamp)
-            if saveData['status_code']:
+            response = self.model.finish(fileName, timestamp)
+            if response['status_code']:
                 CustomQMessageBox(
                     'Information', "Successfully saved {}!".format(fileName))
 
                 # OPEN OUTPUT FILE HERE
                 if platform == 'darwin':
                     system(
-                        'open -a "Microsoft Excel.app" "{}"'.format(saveData['message']))
+                        'open -a "Microsoft Excel.app" "{}"'.format(response['message']))
                 elif platform == 'win32':
                     system('start "EXCEL.EXE" "{}"'.format(
-                        saveData['message']))
+                        response['message']))
 
                 self.returnMenuSignal.emit()
             else:
-                CustomQMessageBox('Critical', saveData['message'])
+                CustomQMessageBox('Critical', response['message'])
 
     def promptSaveFileDialog(self, fileName):
         fileName, selectedFilter = QFileDialog.getSaveFileName(

@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 from Model import ExcelModel
 from UploaderView import UploadWindow
 from ExcelView import ExcelWindow
+from Widgets.Widgets import CustomQMessageBox
 
 
 class Controller(ApplicationContext):
@@ -28,13 +29,14 @@ class Controller(ApplicationContext):
         self.view.returnMenuSignal.connect(self.returnToUpload)
         self.view.show()
 
-    # @pyqtSlot()
     def filesUploaded(self):
-        self.view.close()
-        self.model.buildDF()
-        self.initExcelView()
+        response = self.model.buildDF()
+        if response['status_code']:
+            self.view.close()
+            self.initExcelView()
+        else:
+            CustomQMessageBox('Warning', response['message'])
 
-    # @pyqtSlot()
     def returnToUpload(self):
         self.view.close()
         self.initUploadView(self.model.files)
