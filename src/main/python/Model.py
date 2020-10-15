@@ -177,8 +177,8 @@ class ExcelModel:
             self.saveDF(outputFile, self.concatDFs(self.outDFList))
 
         except xlsxwriter.exceptions.FileCreateError:
-            message = ("Error saving Excel File: {}, ".format(file),
-                       "it could possibly be open in another process")
+            message = "Error saving Excel File: {}, ".format(file)\
+                + "it could possibly be open in another process"
             return {"status_code": False, "message": message}
 
         except KeyError as e:
