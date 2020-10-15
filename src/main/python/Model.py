@@ -225,7 +225,7 @@ class ExcelModel:
 
         else:
             self.resetModel()
-            return {"status_code": True, "message": outputFile}
+            return {"status_code": True, "output_file": outputFile}
 
     # create backup directory to place files in
     # will reside in same directory as output file

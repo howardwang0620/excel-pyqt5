@@ -260,15 +260,15 @@ class ExcelWindow(QMainWindow):
             response = self.model.finish(fileName, timestamp)
             if response['status_code']:
                 CustomQMessageBox(
-                    'Information', "Successfully saved {}!".format(fileName))
+                    'Information', "Successfully saved {}!".format(response['output_file']))
 
                 # OPEN OUTPUT FILE HERE
                 if platform == 'darwin':
                     system(
-                        'open -a "Microsoft Excel.app" "{}"'.format(response['message']))
+                        'open -a "Microsoft Excel.app" "{}"'.format(response['output_file']))
                 elif platform == 'win32':
                     system('start "EXCEL.EXE" "{}"'.format(
-                        response['message']))
+                        response['output_file']))
 
                 self.returnMenuSignal.emit()
             else:
