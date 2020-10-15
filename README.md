@@ -31,7 +31,7 @@ PyQt5 Application for modifying Excel Files (Upwork Project)
 ## Create Application
 **:warning: Must have virtualenv activated (Setup -> Step 4)**
 
-* #### Freeze into Desktop Application
+* #### Freeze into Desktop Application:
     1. run `fbs freeze`
         * (Windows) If FileNotFound error occurs with - missing api-ms-win-crt-*:
             1. Check if the directory exists by going to:`C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x64`
@@ -42,7 +42,7 @@ PyQt5 Application for modifying Excel Files (Upwork Project)
             3. Restart your computer and run `fbs freeze` again
 
 
-* #### Create Distributable Installer :
+* #### Create Distributable Installer (**Must freeze application first**):
     * ######  Windows:
         1. Run and install NSIS ([download here](https://sourceforge.net/projects/nsis/files/NSIS%203/3.06.1/nsis-3.06.1-setup.exe/download?use_mirror=iweb&download=))
         2. Add NSIS directory to PATH environment variable:
