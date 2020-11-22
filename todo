@@ -1,9 +1,0 @@
-select-all option for combobox
-
-
-
-open output file after write:
-import os
-os.system("start EXCEL.EXE file.xlsx")
-
-backup original files
