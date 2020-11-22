@@ -48,12 +48,6 @@ class ExcelWindow(QMainWindow):
         # no timeout, signal emitted whenever input value changes
         self.address.input.textChanged.connect(self.onAddressTextChange)
 
-        # below code times out user input so signal emitted x mseconds after typing
-        # self.typingTimer = QTimer()
-        # self.typingTimer.setSingleShot(True)
-        # self.typingTimer.timeout.connect(self.onAddressTextChange)
-        # self.address.input.textChanged.connect(self.startTypingTimer)
-
         inputContainer = QHBoxLayout()
         inputContainer.addWidget(self.state)
         inputContainer.addWidget(self.city)
@@ -174,17 +168,6 @@ class ExcelWindow(QMainWindow):
             self.invoice.disable()
             self.address.disable()
             self.inputExcelTable.empty()
-
-    # # helper timer for input text change
-    # @pyqtSlot(str)
-    # def startTypingTimer(self, text):
-    #     self.typingTimer.start(200)
-    #
-    # # on text change for address
-    # # begins when typing timer times out
-    # def onAddressTextChange(self):
-    #     self.model.setAddress(self.address.getText())
-    #     self.inputExcelTable.render(self.model.currentFrame())
 
     @pyqtSlot(str)
     def onInvoiceTextChange(self, text):

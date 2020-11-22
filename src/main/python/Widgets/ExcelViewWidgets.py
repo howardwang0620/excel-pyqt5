@@ -4,7 +4,6 @@ from PyQt5.QtCore import *
 
 
 class StateWidget(QWidget):
-
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
@@ -37,7 +36,6 @@ class CityWidget(QWidget):
 
     def initCityBox(self, data):
         self.enable()
-        # data = ['SELECT ALL'] + data
         self.cityBox.addItems(data)
         self.cityBox.clearInput()
 
@@ -80,7 +78,6 @@ class CityWidget(QWidget):
             if text:
                 index = self.findText(str(text))
                 self.onCityBoxSelect(self.model().index(index, 0))
-                # super(CityWidget.CheckedComboBox, self).showPopup()
 
         # connect signal to text edited
         @pyqtSlot('QString')
@@ -174,6 +171,9 @@ class ExcelTableWidget(QTableWidget):
         self.actionButton = actionButton
         self.actionButton.setEnabled(False)
         self.selectAllBtn = selectAllBtn
+        self.mousePressValid = False
+        self.lastSelectedRow = None
+        self.enterKeyPressed = False
         if self.selectAllBtn is not None:
             self.selectAllBtn.setEnabled(False)
             self.selectAllBtn.clicked.connect(self.toggleSelectAll)
@@ -182,13 +182,83 @@ class ExcelTableWidget(QTableWidget):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.itemSelectionChanged.connect(self.toggleButton)
 
-    # toggle connected action button on/off depending if items are selected
-    @pyqtSlot()
-    def toggleButton(self):
-        self.actionButton.setEnabled(len(self.selectedItems()) > 0)
+    def mousePressEvent(self, event):
+        self.mousePressValid = False
+        if not (event.modifiers() & Qt.ControlModifier):
+            self.clearSelection()
+        if self.itemAt(event.pos()) is None:
+            self.lastSelectedRow = None
+        else:
+            self.mousePressValid = True
+        super(ExcelTableWidget, self).mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        row = self.row(self.itemAt(event.pos()))
+        if row == -1 and self.mousePressValid:
+            yPos = event.y()
+            if(yPos < 0):
+                self.lastSelectedRow = 0
+            else:
+                self.lastSelectedRow = self.rowCount() - 1
+        elif row != -1:
+            self.lastSelectedRow = row
+
+        super(ExcelTableWidget, self).mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Up:
+            self.clearSelection()
+            self.handleRowChangedOnKeyUp()
+
+            # don't de-select selected rows
+            if not self.isRowSelected(self.lastSelectedRow):
+                self.selectRow(self.lastSelectedRow)
+
+        elif event.key() == Qt.Key_Down:
+            self.clearSelection()
+            self.handleRowChangedOnKeyDown()
+
+            # don't de-select selected rows
+            if not self.isRowSelected(self.lastSelectedRow):
+                self.selectRow(self.lastSelectedRow)
+
+        elif event.key() == Qt.Key_Return:
+            if len(self.selectionModel().selectedRows()) > 0:
+                self.enterKeyPressed = True
+                self.actionButton.click()
+
+        super(ExcelTableWidget, self).keyPressEvent(event)
+
+    def isRowSelected(self, row):
+        return self.lastSelectedRow in map(lambda x: x.row(), self.selectionModel().selectedRows())
+
+    def handleRowChangedOnKeyUp(self):
+        # select new row, if enter key was last pressed, maintain lastselectedrow value
+        if self.lastSelectedRow is not None:
+            if not self.enterKeyPressed:
+                self.lastSelectedRow = max(0, self.lastSelectedRow - 1)
+            else:
+                self.lastSelectedRow = min(
+                    self.lastSelectedRow, self.rowCount() - 1)
+        else:
+            self.lastSelectedRow = 0
+
+        self.enterKeyPressed = False
+
+    def handleRowChangedOnKeyDown(self):
+        if self.lastSelectedRow is not None:
+            if not self.enterKeyPressed:
+                self.lastSelectedRow = min(
+                    self.lastSelectedRow + 1, self.rowCount() - 1)
+            else:
+                self.lastSelectedRow = min(
+                    self.lastSelectedRow, self.rowCount() - 1)
+        else:
+            self.lastSelectedRow = 0
+
+        self.enterKeyPressed = False
 
     # render table elements
-
     def render(self, data):
         self.hScrollPos = self.horizontalScrollBar().value()
         self.clear()
@@ -209,8 +279,10 @@ class ExcelTableWidget(QTableWidget):
     # add dataframe elements into table
     def buildTable(self, data):
         df = data
-        self.setRowCount(df.shape[0])
-        self.setColumnCount(df.shape[1] + 1)
+        rows = df.shape[0]
+        cols = df.shape[1] + 1
+        self.setRowCount(rows)
+        self.setColumnCount(cols)
         headers = list(data)
         headers.extend(['id'])
         self.setHorizontalHeaderLabels(headers)
@@ -218,8 +290,6 @@ class ExcelTableWidget(QTableWidget):
         # getting data from df is computationally costly so convert it to array first
         df_indexes = df.index.values
         df_values = df.values
-        rows = df.shape[0]
-        cols = df.shape[1] + 1
         self.blockSignals(True)
         for row in range(rows):
             for col in range(cols):
@@ -234,9 +304,16 @@ class ExcelTableWidget(QTableWidget):
         if self.selectAllBtn is not None:
             self.selectAllBtn.setEnabled(self.rowCount() > 0)
 
-    @pyqtSlot()
+    # toggle connected action button on/off depending if items are selected
+    @ pyqtSlot()
+    def toggleButton(self):
+        self.actionButton.setEnabled(len(self.selectedItems()) > 0)
+
+    @ pyqtSlot()
     def toggleSelectAll(self):
         if len(self.selectionModel().selectedRows()) < self.rowCount():
+            self.lastSelectedRow = self.rowCount()
             self.selectAll()
         else:
+            self.lastSelectedRow = 0
             self.clearSelection()

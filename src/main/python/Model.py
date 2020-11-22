@@ -6,7 +6,11 @@ import gc
 
 
 class ExcelModel:
+    _ALLOWED_COLUMN_NAMES = ["Require Date", "Invoice NO",
+                             "Address1", "City", "State", "Zip code"]
+
     def __init__(self, files=None):
+
         if files:
             self.files = files
         else:
@@ -74,6 +78,11 @@ class ExcelModel:
                 df['id'] = str(idx) + "_" + df.index.astype(str)
                 df.set_index(['id'], inplace=True)
 
+                # check if columns exist
+                if(not set(self._ALLOWED_COLUMN_NAMES).issubset(df.columns)):
+                    raise ValueError(
+                        "Column names can't be correctly read, make sure columns are properly named!")
+
                 # reformatting
                 df['Require Date'] = df['Require Date'].dt.strftime('%m/%d/%Y')
                 df['Sales Date'] = df['Sales Date'].dt.strftime('%m/%d/%Y')
@@ -87,7 +96,12 @@ class ExcelModel:
             # back up original files
             self.backups = copy.deepcopy(self.dfList)
 
+        except ValueError as e:
+            self.resetModel()
+            return {"status_code": False, "message": e.args[0]}
+
         except AttributeError:
+            self.resetModel()
             message = "There seems to be an error with input files, "\
                 + "please make sure data types and columns are added "\
                 + "accordingly (dates as date values, etc.)"
@@ -95,6 +109,7 @@ class ExcelModel:
             return {"status_code": False, "message": message}
 
         except Exception as e:
+            self.resetModel()
             message = "An exception of type {0} occurred. Arguments:\n{1!r}".format(
                 type(e).__name__, e.args)
 
@@ -151,8 +166,9 @@ class ExcelModel:
                                   (df['Address1'].str.contains(self.selectedAddress, case=False))])
 
             df = self.concatDFs(tmpList)
+
             if not df.empty:
-                return df
+                return self.filterFrame(df)
 
         # no state and city selected or empty dataframe
         return None
@@ -161,9 +177,12 @@ class ExcelModel:
     def outputFrame(self):
         df = self.concatDFs(self.outDFList)
         if not df.empty:
-            return df
+            return self.filterFrame(df)
         else:
             return None
+
+    def filterFrame(self, df):
+        return df[self._ALLOWED_COLUMN_NAMES]
 
     # adds selected ids to output list
     def addToOutputList(self, ids):
@@ -218,7 +237,6 @@ class ExcelModel:
             return {"status_code": False, "message": message}
 
         except Exception as e:
-            print("exception raised")
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(e).__name__, e.args)
             return {"status_code": False, "message": message}
@@ -228,7 +246,6 @@ class ExcelModel:
             return {"status_code": True, "output_file": outputFile}
 
     # create backup directory to place files in
-    # will reside in same directory as output file
     def createBackupDirectory(self, outputFile):
         backupPath = path.join(path.dirname(
             path.abspath(outputFile)), 'backups')
@@ -287,32 +304,3 @@ class ExcelModel:
             )) + 1  # adding a little extra space
             ws.set_column(idx, idx, max_len)  # set column width
         wb.set_size(16095, 9660)
-
-
-# def testFiles():
-#     # path = './test-files'
-#     # path = './test-files/necessary-files'
-#     p = path.abspath('./excel-files')
-#     files = [path.join(p, f) for f in listdir(p) if path.isfile(path.join(p, f)) and (
-#         not f.startswith('.') and not f.startswith('~'))]
-#     return files
-#
-# files = testFiles()
-# em = ExcelModel(files)
-# em.buildDF()
-# em.reformatDF(em.backups[0])
-#
-# print(em.backups[0])
-# em.finish(
-#     '/Users/howardwang/Desktop/excel-application/excel-files/dsca.xls')
-# print("generating frames...")
-# excel_df = ExcelModel(files)
-# excel_df.buildDF()
-# print("done!")
-# excel_df.setState('NY')
-# excel_df.addCityToFilter('BROOKLYN')
-# excel_df.addToOutputList(['0_5', '0_6'])
-# print(excel_df.currentFrame())
-# print(excel_df.outputFrame())
-# outputPath = '/Users/howardwang/Desktop/excel-application/excel-files/saves/output1.xlsx'
-# excel_df.finish(outputPath)
