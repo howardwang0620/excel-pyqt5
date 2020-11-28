@@ -180,11 +180,12 @@ class ExcelTableWidget(QTableWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setStyleSheet("QTableView::item{padding: 0 5px 0 5px;}")
         self.itemSelectionChanged.connect(self.toggleButton)
 
     def mousePressEvent(self, event):
         self.mousePressValid = False
-        if not (event.modifiers() & Qt.ControlModifier):
+        if not (event.modifiers() & Qt.ShiftModifier):
             self.clearSelection()
         if self.itemAt(event.pos()) is None:
             self.lastSelectedRow = None
@@ -242,7 +243,6 @@ class ExcelTableWidget(QTableWidget):
                     self.lastSelectedRow, self.rowCount() - 1)
         else:
             self.lastSelectedRow = 0
-
         self.enterKeyPressed = False
 
     def handleRowChangedOnKeyDown(self):
@@ -255,7 +255,6 @@ class ExcelTableWidget(QTableWidget):
                     self.lastSelectedRow, self.rowCount() - 1)
         else:
             self.lastSelectedRow = 0
-
         self.enterKeyPressed = False
 
     # render table elements
@@ -299,12 +298,19 @@ class ExcelTableWidget(QTableWidget):
                     item = QTableWidgetItem(str(df_indexes[row]))
                 self.setItem(row, col, item)
         self.blockSignals(False)
-        self.resizeColumnsToContents()
-        self.horizontalScrollBar().setValue(self.hScrollPos)
+        self.reformatTable()
         if self.selectAllBtn is not None:
             self.selectAllBtn.setEnabled(self.rowCount() > 0)
 
+    def reformatTable(self):
+        self.hideColumn(6)
+        header = self.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        self.horizontalScrollBar().setValue(self.hScrollPos)
+
     # toggle connected action button on/off depending if items are selected
+
     @ pyqtSlot()
     def toggleButton(self):
         self.actionButton.setEnabled(len(self.selectedItems()) > 0)
