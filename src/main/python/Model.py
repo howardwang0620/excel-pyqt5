@@ -122,6 +122,13 @@ class ExcelModel:
     def setState(self, state):
         self.selectedState = state
 
+    # retrieves all cities from dataframe
+    def getAllStates(self):
+        states = set()
+        for df in self.dfList:
+            states.update(df.State.unique())
+        return sorted(list(states))
+
     # Adds a city to selectedCities list
     def addCity(self, city):
         if city not in self.selectedCities:

@@ -28,7 +28,7 @@ class ExcelWindow(QMainWindow):
         sp = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         sp.setHorizontalStretch(2)
-        self.state = StateWidget()
+        self.state = StateWidget(self.model.getAllStates())
         self.state.setSizePolicy(sp)
         self.state.stateBox.currentTextChanged.connect(self.onStateBoxChange)
         sp.setHorizontalStretch(4)

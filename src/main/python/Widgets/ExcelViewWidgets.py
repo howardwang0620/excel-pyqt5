@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 
 
 class StateWidget(QWidget):
-    def __init__(self):
+    def __init__(self, stateList):
         super().__init__()
         layout = QVBoxLayout()
 
@@ -12,8 +12,9 @@ class StateWidget(QWidget):
         layout.addWidget(label)
 
         self.stateBox = QComboBox()
-        self.stateBox.addItem("NY")
-        self.stateBox.addItem("NJ")
+        for state in stateList:
+            self.stateBox.addItem(state)
+
         self.stateBox.setCurrentIndex(-1)
         layout.addWidget(self.stateBox)
 
