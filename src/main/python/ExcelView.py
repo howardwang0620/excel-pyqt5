@@ -27,6 +27,8 @@ class ExcelWindow(QMainWindow):
 
         sp = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
+        # InputContainer will hold all the widgets intitialized below: State dropdown box, City dropdown box, Invoice Text box, Address text box
+        inputContainer = QHBoxLayout()
         sp.setHorizontalStretch(2)
         self.state = StateWidget(self.model.getAllStates())
         self.state.setSizePolicy(sp)
@@ -48,7 +50,6 @@ class ExcelWindow(QMainWindow):
         # no timeout, signal emitted whenever input value changes
         self.address.input.textChanged.connect(self.onAddressTextChange)
 
-        inputContainer = QHBoxLayout()
         inputContainer.addWidget(self.state)
         inputContainer.addWidget(self.city)
         inputContainer.addWidget(self.invoice)
@@ -203,6 +204,7 @@ class ExcelWindow(QMainWindow):
         else:
             self.selectAllRecordBtn.setEnabled(True)
 
+        # rerender output table to include added rows
         self.outputExcelTable.render(self.model.outputFrame())
 
     @pyqtSlot()

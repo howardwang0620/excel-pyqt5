@@ -1,0 +1,45 @@
+## Application Architecture
+
+- Controller.py is the entrypoint for the application, using fbs run will call the main function and initiate the app. Controller.py dictates what View window should be active (UploaderView or ExcelView)
+
+- Rest of application follows Model-View architecture:
+    - Model: Model.py
+    - Views: UploaderView, ExcelView
+    - Views contain widgets that processes data contained inside Model.py
+
+UploaderView.py receives files inputted by user
+ExcelView displays those Excel files in a data table widget and allows the User to process data accordingly.
+All widgets are stored inside the Widgets/ directory, ExcelViewWidgets contains all ExcelView-related widgets (TableWidget) and same for UploaderViewWidgets. Widgets.py contains widgets that may be used by all View components.
+
+
+# Adding widgets
+
+To add a widget, define some QWidget or create your custom widget (custom widgets are found in Widgets/) and attach it to whatever existing Layout container you want.
+For more about adding layouts: https://doc.qt.io/qtforpython/overviews/layout.html
+
+If the widget needs to have a function attached, eg. Dropdown box or text input box, they will generally have a property where you can connect your function:
+    e.g. the 'Select State' dropdown widget will have a `currentTextChanged` property. You can connect a function to this property like:
+
+        stateDropdownBox.currentTextChanged(sampleFunction)
+
+    sampleFunction will need to be defined as:
+
+        sampleFunction(self, state_param):
+            # do something
+
+    Say that the user selects 'NY' from the dropdown box, our sampleFunction will have 'NY' passed as the state_param. Working example of this can be found in ExcelView.py
+
+
+## Model
+
+The model is just a list of pandas dataframes that represent whatever Excel files have been submitted.
+E.g. User has submitted 3 excel files [report-1.xlsx, report-2.xlsx, report-3.xlsx], our model will be [df1, df2, df3], where df1 represents report-1.xlsx as a dataframe.
+
+This class also has a bunch of getter/setter functions for different properties e.g. State, Cities, etc.
+
+It also builds the output Excel file:
+1. User inputted 3 excel files so our inputted dataframe list looks like [df1, df2, df3]
+2. Our output dataframe will begin as a list: [oDf1, oDf2, oDf3] where all dataframes are empty
+3. When user adds rows from the input Excel file, we have a list of row-ids to add to output dataframes, row-ids look like '<file-index>_<row-index>'.
+First part of the id contains the file-index so we know which df to use in our list of input dfs. The row-index will let us know which rows to copy over from the inputted dataframe to the output dataframe.
+4. When we save our list of outputted dataframes, we merge all dataframes in the list together and export that as the output Excel file.

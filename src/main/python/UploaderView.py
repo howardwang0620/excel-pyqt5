@@ -17,11 +17,12 @@ class UploadWindow(QMainWindow):
         self.model = model
         self.initUI()
 
+    # Initializes GUI for UploaderView window
     def initUI(self):
         window = QWidget()
         container = QHBoxLayout()
 
-        fileContainer = QVBoxLayout()
+        fileContainer = QVBoxLayout()   # Container for file window
         self.fileList = DragAndDropListWidget(self.model)
         self.fileList.addFileSignal.connect(self.addFile)
         self.fileList.removeFileSignal.connect(self.removeFile)
@@ -29,7 +30,7 @@ class UploadWindow(QMainWindow):
 
         self.initFileList()
 
-        btnContainer = QVBoxLayout()
+        btnContainer = QVBoxLayout()    # Container for bottom buttons
         addBtn = QPushButton('Add File')
         addBtn.clicked.connect(self.fileList.promptFileDialog)
 
@@ -42,7 +43,6 @@ class UploadWindow(QMainWindow):
         quitBtn = QPushButton('Quit')
         quitBtn.clicked.connect(self.close)
 
-        # btnContainer.addWidget(self.state)
         btnContainer.addWidget(addBtn)
         btnContainer.addWidget(removeBtn)
         btnContainer.addWidget(submitBtn)
