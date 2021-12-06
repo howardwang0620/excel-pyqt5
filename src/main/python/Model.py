@@ -8,9 +8,9 @@ import gc
 class ExcelModel:
     _ALLOWED_COLUMN_NAMES = ["Require Date", "Invoice NO",
                              "Address1", "City", "State", "Zip code"]
+    _DATE_FORMATS = ['mm-dd-YYYY', 'mm/dd/YYYY']
 
     def __init__(self, files=None):
-
         if files:
             self.files = files
         else:
@@ -24,6 +24,7 @@ class ExcelModel:
         self.selectedCities = []
         self.selectedInvoice = ""
         self.selectedAddress = ""
+        self.selectedDateFormat = self._DATE_FORMATS[0]
 
     # add file to self.files, returns true if added
     def addFile(self, file):
@@ -117,6 +118,13 @@ class ExcelModel:
 
         else:
             return {"status_code": True, "message": "Success!"}
+
+    # parses MMDDYYYY date formats with either '/' or '-' as separator
+    def getAvailableDateFormats(self):
+        return self._DATE_FORMATS
+
+    def setOutputDateFormat(self, format):
+        self.selectedDateFormat = format
 
     # set selectedState to inputted state
     def setState(self, state):
@@ -282,7 +290,7 @@ class ExcelModel:
 
         # create excel writer and write df to excel file
         writer = pd.ExcelWriter(file, engine='xlsxwriter',
-                                datetime_format='mm/dd/YYYY')
+                                datetime_format=self.selectedDateFormat)
         sheet_name = path.basename(file)
         df.to_excel(writer, sheet_name=sheet_name, index=False)
 

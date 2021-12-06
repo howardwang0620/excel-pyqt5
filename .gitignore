@@ -8,3 +8,4 @@ __ pycache __
 myenv/
 src/main/python/__pycache__/
 src/main/python/Widgets/__pycache__/
+*.xls*

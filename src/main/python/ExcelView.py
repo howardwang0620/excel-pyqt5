@@ -101,6 +101,8 @@ class ExcelWindow(QMainWindow):
         excelFrame.setFrameStyle(QFrame.Panel)
 
         mainActionsContainer = QHBoxLayout()
+        self.dateFormatDropdown = DateFormatDropdownWidget(self.model.getAvailableDateFormats())
+        self.dateFormatDropdown.formatBox.currentTextChanged.connect(self.onDateFormatChange)
         self.quitBtn = StyledPushButton('Quit')
         self.quitBtn.clicked.connect(
             lambda: self.showWarningDialog(self.close))
@@ -110,6 +112,7 @@ class ExcelWindow(QMainWindow):
         self.saveBtn = StyledPushButton('Save')
         self.saveBtn.clicked.connect(self.saveCheck)
         mainActionsContainer.addStretch(1)
+        mainActionsContainer.addWidget(self.dateFormatDropdown)
         mainActionsContainer.addWidget(self.quitBtn)
         mainActionsContainer.addWidget(self.mainMenuBtn)
         mainActionsContainer.addWidget(self.saveBtn)
@@ -218,6 +221,10 @@ class ExcelWindow(QMainWindow):
         if self.outputExcelTable.rowCount() == 0:
             self.outputExcelTable.empty()
         self.inputExcelTable.render(self.model.currentFrame())
+
+    @pyqtSlot(str)
+    def onDateFormatChange(self, format):
+        self.model.setOutputDateFormat(format)
 
     @pyqtSlot()
     def showWarningDialog(self, callback):

@@ -324,3 +324,20 @@ class ExcelTableWidget(QTableWidget):
         else:
             self.lastSelectedRow = 0
             self.clearSelection()
+
+class DateFormatDropdownWidget(QWidget):
+    def __init__(self, dateFormats):
+        super().__init__()
+        layout = QVBoxLayout()
+
+        label = QLabel('Output Date Format')
+        layout.addWidget(label)
+
+        self.formatBox = QComboBox()
+        for format in dateFormats:
+            self.formatBox.addItem(format)
+
+        self.formatBox.setCurrentIndex(0)
+        layout.addWidget(self.formatBox)
+
+        self.setLayout(layout)
